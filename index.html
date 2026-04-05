@@ -1279,6 +1279,25 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
   }
   const phone = lead.ownerPhone || lead.phone || "";
 
+  // Extract property type + key features
+  const allText = ((lead.notes || "") + " " + (lead.description || "")).toLowerCase();
+  const typePatterns = [
+    [/terraced\s*house/, "Terraced House"], [/maisonette/, "Maisonette"], [/townhouse|town\s*house/, "Townhouse"],
+    [/penthouse/, "Penthouse"], [/apartment|flat/, "Apartment"], [/villa/, "Villa"], [/bungalow/, "Bungalow"],
+    [/farmhouse/, "Farmhouse"], [/house of character/, "House of Character"], [/duplex/, "Duplex"],
+  ];
+  let propType = "";
+  for (const [pat, label] of typePatterns) { if (pat.test(allText)) { propType = label; break; } }
+  const keyFeats = [];
+  if (/airspace/.test(allText)) keyFeats.push("Airspace");
+  if (/\buca\b/.test(allText)) keyFeats.push("UCA");
+  if (/full\s*(?:roof|ownership)/.test(allText)) keyFeats.push("Full Roof");
+  if (/garage/.test(allText)) keyFeats.push("Garage");
+  if (/freehold/.test(allText)) keyFeats.push("Freehold");
+  if (/pool/.test(allText)) keyFeats.push("Pool");
+  if (/permits?/.test(allText)) keyFeats.push("Permits");
+  const tagLine = [propType, ...keyFeats].filter(Boolean).join(" + ");
+
   return (
     <div className="lead-card" onClick={() => selectable ? onToggleSelect(lead.id) : onEdit(lead)} style={{ cursor: "pointer", outline: selected ? "2px solid #e53e3e" : "none", outlineOffset: "2px" }}>
       <div className="lead-card-accent" style={{ background: s.gradient }}></div>
@@ -1295,6 +1314,8 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
             {lead.location && <span className="lead-card-location">{cleanLocation(lead.location)}</span>}
             <span className="lead-card-date" style={{ marginLeft: "auto" }}>{lead.dateFound}</span>
           </div>
+          {/* Row 2: Property type + features tagline */}
+          {tagLine && <div style={{ fontSize: 12, fontWeight: 600, color: "#6366f1", marginBottom: 4 }}>{tagLine}</div>}
           {/* Row 2: Description (2 lines max) */}
           {lead.description && <p className="lead-card-desc">{lead.description}</p>}
           {/* Row 4: Owner + Phone */}
