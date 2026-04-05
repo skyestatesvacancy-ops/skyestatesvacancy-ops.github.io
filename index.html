@@ -1316,7 +1316,7 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
   const tagLine = [propType, ...keyFeats].filter(Boolean).join(" + ");
 
   return (
-    <div className="lead-card" onClick={() => selectable ? onToggleSelect(lead.id) : onEdit(lead)} style={{ cursor: "pointer", outline: selected ? "2px solid #e53e3e" : "none", outlineOffset: "2px", background: s.bg, borderColor: s.border }}>
+    <div className="lead-card" onClick={() => selectable ? onToggleSelect(lead.id) : onEdit(lead)} style={{ cursor: "pointer", outline: selected ? "2px solid #e53e3e" : "none", outlineOffset: "2px", borderColor: s.color, borderWidth: 2 }}>
       <div className="lead-card-accent" style={{ background: s.gradient }}></div>
       {selectable && (
         <input type="checkbox" checked={!!selected} onChange={e => { e.stopPropagation(); onToggleSelect(lead.id); }}
@@ -1609,10 +1609,10 @@ function App() {
         {STATUSES.map(s => (
           <div key={s.key} className={`stat-card ${filter === s.key ? 'active' : ''}`}
             onClick={() => setFilter(s.key === filter ? "all" : s.key)}
-            style={{ background: s.bg, borderColor: filter === s.key ? s.color : s.border }}>
+            style={{ borderColor: s.color, borderWidth: 2 }}>
             <div className="stat-card-icon">{s.icon}</div>
             <div className="stat-card-info">
-              <div className="stat-card-count" style={{ color: s.color }}>{counts[s.key] || 0}</div>
+              <div className="stat-card-count">{counts[s.key] || 0}</div>
               <div className="stat-card-label" style={{ color: s.color }}>{s.label}</div>
             </div>
             <div className="stat-card-bar" style={{ background: s.gradient }}></div>
