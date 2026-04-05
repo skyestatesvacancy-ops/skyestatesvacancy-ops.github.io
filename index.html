@@ -384,6 +384,44 @@
   @media (min-width: 901px) {
     .mobile-only { display: none; }
   }
+
+  /* Dark mode */
+  body.dark {
+    background: #0f0f1a;
+    color: #e2e8f0;
+  }
+  body.dark .main { color: #e2e8f0; }
+  body.dark .page-title { color: #f1f5f9; }
+  body.dark .page-subtitle { color: #94a3b8; }
+  body.dark .lead-card {
+    background: #1e1e2e; border-color: #2d2d3f;
+  }
+  body.dark .lead-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.3); border-color: #3d3d5c; }
+  body.dark .lead-card-price { color: #4ade80; }
+  body.dark .lead-card-location { color: #e2e8f0; }
+  body.dark .lead-card-desc { color: #94a3b8; }
+  body.dark .lead-card-meta { color: #cbd5e1; }
+  body.dark .lead-card-notes { color: #64748b; }
+  body.dark .lead-card-date { color: #64748b; }
+  body.dark .search-bar input { background: #1e1e2e; border-color: #2d2d3f; color: #e2e8f0; }
+  body.dark .search-bar select { background: #1e1e2e; border-color: #2d2d3f; color: #e2e8f0; }
+  body.dark .search-sticky { background: #0f0f1a; }
+  body.dark .stat-card { background: #1e1e2e; border-color: #2d2d3f; }
+  body.dark .stat-card-value { color: #f1f5f9; }
+  body.dark .stat-card-label { color: #94a3b8; }
+  body.dark .modal { background: #1a1a2e; color: #e2e8f0; }
+  body.dark .modal label { color: #94a3b8; }
+  body.dark .modal input, body.dark .modal select, body.dark .modal textarea {
+    background: #0f0f1a; border-color: #2d2d3f; color: #e2e8f0;
+  }
+  body.dark .overlay { background: rgba(0,0,0,0.7); }
+  body.dark .quick-action-bar { background: #1a1a2e; border-color: #2d2d3f; }
+  body.dark .mobile-home-tile { background: #1e1e2e; border-color: #2d2d3f; }
+  body.dark .mobile-home-tile-label { color: #e2e8f0; }
+  body.dark .mobile-home-tile-count { color: #94a3b8; }
+  body.dark .mobile-status-header { color: #e2e8f0; }
+  body.dark .mobile-back { color: #94a3b8; }
+  body.dark .error-banner { background: #2d1b1b; border-color: #5c2d2d; color: #fca5a5; }
 </style>
 </head>
 <body>
@@ -728,7 +766,7 @@ function MarketPricing() {
   );
 }
 
-function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChange }) {
+function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChange, dark, onToggleDark }) {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
@@ -751,8 +789,7 @@ function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChang
 
       <div className="sidebar-section">Tools</div>
       <div className={`nav-item ${page === "market" ? "active" : ""}`} onClick={() => onPageChange("market")}><span className="nav-icon">📊</span> Market Pricing</div>
-      <div className="nav-item"><span className="nav-icon">🤖</span> Auto-Scanner</div>
-      <div className="nav-item"><span className="nav-icon">⚙️</span> Settings</div>
+      <div className="nav-item" onClick={onToggleDark}><span className="nav-icon">{dark ? "☀️" : "🌙"}</span> {dark ? "Light Mode" : "Dark Mode"}</div>
 
       <div className="sidebar-bottom">
         <div style={{ fontSize: 13, fontWeight: 600 }}>
@@ -1308,9 +1345,15 @@ function App() {
   const [search, setSearch]         = useState("");
   const [error, setError]           = useState(false);
   const [page, setPage]             = useState("leads"); // "leads" or "market"
+  const [dark, setDark]             = useState(() => localStorage.getItem("darkMode") === "true");
   const [mobileView, setMobileView] = useState("home"); // "home" or status key
   const [selectedIds, setSelectedIds] = useState([]);
   const isMobile = window.innerWidth <= 900;
+
+  React.useEffect(() => {
+    document.body.classList.toggle("dark", dark);
+    localStorage.setItem("darkMode", dark);
+  }, [dark]);
 
   const fetchLeads = () => {
     dbGetLeads().then(data => { setLeads(Array.isArray(data) ? data : []); setError(false); }).catch(() => setError(true));
@@ -1553,7 +1596,7 @@ function App() {
 
   return (
     <div className="app-layout">
-      <Sidebar counts={counts} totalLeads={leads.length} filter={filter} onFilterChange={f => { setPage("leads"); setFilter(f); }} page={page} onPageChange={setPage} />
+      <Sidebar counts={counts} totalLeads={leads.length} filter={filter} onFilterChange={f => { setPage("leads"); setFilter(f); }} page={page} onPageChange={setPage} dark={dark} onToggleDark={() => setDark(d => !d)} />
 
       {page === "market"
         ? React.createElement(MarketPricing)
