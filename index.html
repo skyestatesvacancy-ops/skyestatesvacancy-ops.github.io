@@ -864,6 +864,111 @@ function OfferModal({ lead, onClose, onSave }) {
   );
 }
 
+function ChatPanel({ link }) {
+  const [messages, setMessages] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [reply, setReply] = useState("");
+  const [error, setError] = useState("");
+
+  const tunnelUrl = localStorage.getItem("tunnelUrl") || "";
+
+  const loadChat = async () => {
+    if (!tunnelUrl) { setError("Set tunnel URL in Settings first"); return; }
+    setLoading(true); setError("");
+    try {
+      const r = await fetch(tunnelUrl + "/api/chat?link=" + encodeURIComponent(link), { timeout: 35000 });
+      const data = await r.json();
+      if (data.error) { setError(data.error); }
+      else { setMessages(data.messages || []); }
+    } catch (e) { setError("Failed to connect: " + e.message); }
+    setLoading(false);
+  };
+
+  const sendReply = async () => {
+    if (!reply.trim() || !tunnelUrl) return;
+    setSending(true); setError("");
+    try {
+      const r = await fetch(tunnelUrl + "/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ link, message: reply.trim() }),
+      });
+      const data = await r.json();
+      if (data.success) {
+        setReply("");
+        // Reload chat to show the new message
+        setTimeout(loadChat, 2000);
+      } else { setError(data.error || "Send failed"); }
+    } catch (e) { setError("Failed to send: " + e.message); }
+    setSending(false);
+  };
+
+  // Not loaded yet — show button
+  if (messages === null && !loading) {
+    return React.createElement("div", { style: { marginBottom: 12 } },
+      React.createElement("button", {
+        onClick: loadChat,
+        style: { width: "100%", padding: "10px 16px", borderRadius: 10, border: "1px solid #3b82f6", background: "#eff6ff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#3b82f6", fontFamily: "inherit" }
+      }, "\uD83D\uDCAC Load Chat"),
+      error && React.createElement("div", { style: { fontSize: 12, color: "#ef4444", marginTop: 6 } }, error),
+    );
+  }
+
+  // Loading
+  if (loading) {
+    return React.createElement("div", { style: { textAlign: "center", padding: 20, color: "#9ca3af" } },
+      React.createElement("div", { style: { fontSize: 14 } }, "Loading conversation..."),
+      React.createElement("div", { style: { fontSize: 12, marginTop: 4 } }, "This takes about 10 seconds"),
+    );
+  }
+
+  // Chat view
+  return React.createElement("div", { style: { marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" } },
+    // Header
+    React.createElement("div", { style: { padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" } },
+      React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: "#374151" } }, "\uD83D\uDCAC Chat (" + messages.length + " messages)"),
+      React.createElement("button", { onClick: loadChat, style: { fontSize: 11, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", fontWeight: 600 } }, "Refresh"),
+    ),
+    // Messages
+    React.createElement("div", { style: { maxHeight: 300, overflowY: "auto", padding: 10, background: "#fafafa" } },
+      messages.length === 0
+        ? React.createElement("div", { style: { textAlign: "center", color: "#9ca3af", fontSize: 13, padding: 20 } }, "No messages yet")
+        : messages.map((m, i) => React.createElement("div", {
+            key: i,
+            style: {
+              display: "flex", justifyContent: m.isMe ? "flex-end" : "flex-start", marginBottom: 6,
+            }
+          },
+            React.createElement("div", {
+              style: {
+                maxWidth: "80%", padding: "8px 12px", borderRadius: 14, fontSize: 13, lineHeight: 1.4,
+                background: m.isMe ? "#3b82f6" : "#e5e7eb",
+                color: m.isMe ? "#fff" : "#1a1a2e",
+                borderBottomRightRadius: m.isMe ? 4 : 14,
+                borderBottomLeftRadius: m.isMe ? 14 : 4,
+              }
+            }, m.text)
+          ))
+    ),
+    // Error
+    error && React.createElement("div", { style: { padding: "6px 12px", fontSize: 12, color: "#ef4444", background: "#fef2f2" } }, error),
+    // Reply input
+    React.createElement("div", { style: { display: "flex", gap: 8, padding: 10, borderTop: "1px solid #e5e7eb", background: "#fff" } },
+      React.createElement("input", {
+        value: reply, onChange: (e) => setReply(e.target.value),
+        placeholder: "Type a reply...",
+        onKeyDown: (e) => { if (e.key === "Enter" && !sending) sendReply(); },
+        style: { flex: 1, padding: "8px 12px", borderRadius: 20, border: "1px solid #e5e7eb", fontSize: 13, fontFamily: "inherit", outline: "none" }
+      }),
+      React.createElement("button", {
+        onClick: sendReply, disabled: sending || !reply.trim(),
+        style: { padding: "8px 16px", borderRadius: 20, border: "none", background: sending ? "#9ca3af" : "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit" }
+      }, sending ? "..." : "Send"),
+    ),
+  );
+}
+
 function PreviewNotes({ lead, onSaveNotes }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(lead.userNotes || "");
@@ -1060,6 +1165,9 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
         React.createElement("a", { href: lead.link, target: "_blank", rel: "noreferrer", style: { color: "#6366f1", fontSize: 13, textDecoration: "underline", wordBreak: "break-all" } },
           "\uD83D\uDD17 " + lead.link)
       ),
+
+      // Chat panel
+      lead.link && lead.link.includes("marketplace") && React.createElement(ChatPanel, { link: lead.link }),
 
       // Dead (left) + Potential (right) shortcut buttons
       React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 14 } },
@@ -1632,6 +1740,20 @@ function App() {
         <div className="mobile-home-tile-info">
           <div className="mobile-home-tile-label">{dark ? "Light Mode" : "Dark Mode"}</div>
           <div className="mobile-home-tile-count">Switch appearance</div>
+        </div>
+        <div className="mobile-home-tile-arrow">{'\u203A'}</div>
+      </div>
+
+      {/* Tunnel URL setting */}
+      <div className="mobile-home-tile" style={{ marginTop: 8 }} onClick={() => {
+        const current = localStorage.getItem("tunnelUrl") || "";
+        const url = prompt("Enter tunnel URL (e.g. https://xxx.trycloudflare.com):", current);
+        if (url !== null) { localStorage.setItem("tunnelUrl", url.replace(/\/$/, "")); alert("Saved!"); }
+      }}>
+        <div className="mobile-home-tile-icon" style={{ background: "#eef2ff" }}>{"\uD83D\uDD17"}</div>
+        <div className="mobile-home-tile-info">
+          <div className="mobile-home-tile-label">Chat Server</div>
+          <div className="mobile-home-tile-count">{localStorage.getItem("tunnelUrl") ? "Connected" : "Not configured"}</div>
         </div>
         <div className="mobile-home-tile-arrow">{'\u203A'}</div>
       </div>
