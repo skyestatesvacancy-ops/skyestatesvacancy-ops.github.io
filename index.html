@@ -899,19 +899,6 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate }) {
         React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: "#374151" } }, cleanLocation(lead.location)),
       ),
 
-      // Timeline
-      currentStageIdx >= 0 && React.createElement("div", { className: "lead-timeline" },
-        stages.map((st, i) => React.createElement(React.Fragment, { key: st.key },
-          i > 0 && React.createElement("div", { className: "timeline-connector" + (i <= currentStageIdx ? " done" : "") }),
-          React.createElement("div", { className: "timeline-step" },
-            React.createElement("div", {
-              className: "timeline-dot" + (i === currentStageIdx ? " active" : i < currentStageIdx ? " done" : ""),
-              style: i === currentStageIdx ? { borderColor: st.color, background: st.color } : {}
-            }, i <= currentStageIdx ? "\u2713" : ""),
-            React.createElement("div", { className: "timeline-label" + (i === currentStageIdx ? " active" : "") }, st.label)
-          )
-        ))
-      ),
 
       // Status badge
       React.createElement("div", { style: { marginBottom: 12 } },
