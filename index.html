@@ -1173,7 +1173,7 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
       ),
 
       // Chat panel
-      lead.link && lead.link.includes("marketplace") && React.createElement(ChatPanel, { link: lead.link }),
+      lead.link && lead.link.includes("marketplace") && React.createElement(ChatPanel, { key: "chat-" + lead.id, link: lead.link }),
 
       // Dead (left) + Potential (right) shortcut buttons
       React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 14 } },
@@ -1600,7 +1600,14 @@ function App() {
     }).catch(() => setError(true));
   };
 
-  useEffect(() => { fetchLeads(); const t = setInterval(fetchLeads, 8000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    fetchLeads();
+    const t = setInterval(() => {
+      // Don't auto-refresh while preview or edit modal is open (causes state reset)
+      if (!previewModal && !editModal) fetchLeads();
+    }, 8000);
+    return () => clearInterval(t);
+  }, []);
 
   const save = async (form) => {
     console.log("Saving lead:", form);
