@@ -406,9 +406,9 @@
   body.dark .search-bar input { background: #1e1e2e; border-color: #2d2d3f; color: #e2e8f0; }
   body.dark .search-bar select { background: #1e1e2e; border-color: #2d2d3f; color: #e2e8f0; }
   body.dark .search-sticky { background: #0f0f1a; }
-  body.dark .stat-card { background: #1e1e2e; border-color: #2d2d3f; }
-  body.dark .stat-card-value { color: #f1f5f9; }
-  body.dark .stat-card-label { color: #94a3b8; }
+  body.dark .stat-card { background: #1e1e2e; border-color: #2d2d3f; color: #e2e8f0; }
+  body.dark .stat-card .stat-card-value, body.dark .stat-card div:nth-child(2) { color: #f1f5f9; }
+  body.dark .stat-card .stat-card-label, body.dark .stat-card div:first-child { color: #94a3b8; }
   body.dark .modal { background: #1a1a2e; color: #e2e8f0; }
   body.dark .modal label { color: #94a3b8; }
   body.dark .modal input, body.dark .modal select, body.dark .modal textarea {
@@ -416,12 +416,23 @@
   }
   body.dark .overlay { background: rgba(0,0,0,0.7); }
   body.dark .quick-action-bar { background: #1a1a2e; border-color: #2d2d3f; }
+  body.dark .quick-action-btn { background: #1e1e2e !important; }
   body.dark .mobile-home-tile { background: #1e1e2e; border-color: #2d2d3f; }
   body.dark .mobile-home-tile-label { color: #e2e8f0; }
   body.dark .mobile-home-tile-count { color: #94a3b8; }
+  body.dark .mobile-home-tile-number { color: #e2e8f0 !important; }
   body.dark .mobile-status-header { color: #e2e8f0; }
+  body.dark .mobile-status-header-label { color: #e2e8f0; }
+  body.dark .mobile-status-header-count { color: #94a3b8; }
   body.dark .mobile-back { color: #94a3b8; }
   body.dark .error-banner { background: #2d1b1b; border-color: #5c2d2d; color: #fca5a5; }
+  body.dark .status-select { background: #1e1e2e !important; color: #e2e8f0 !important; border-color: #3d3d5c !important; }
+  body.dark .lead-card-link { color: #818cf8; }
+  body.dark .lead-card-detail { color: #94a3b8; }
+  body.dark .btn-primary { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  body.dark .empty-state { color: #64748b; }
+  body.dark .empty-state-text { color: #94a3b8; }
+  body.dark .empty-state-sub { color: #64748b; }
 </style>
 </head>
 <body>
@@ -1496,6 +1507,16 @@ function App() {
           <div className="mobile-home-tile-count">View entire pipeline</div>
         </div>
         <div className="mobile-home-tile-number" style={{ color: "#475569" }}>{leads.length}</div>
+        <div className="mobile-home-tile-arrow">{'\u203A'}</div>
+      </div>
+
+      {/* Dark mode toggle */}
+      <div className="mobile-home-tile" style={{ marginTop: 8 }} onClick={() => setDark(d => !d)}>
+        <div className="mobile-home-tile-icon" style={{ background: dark ? "#fef3c7" : "#1e1e2e" }}>{dark ? "\u2600\uFE0F" : "\uD83C\uDF19"}</div>
+        <div className="mobile-home-tile-info">
+          <div className="mobile-home-tile-label">{dark ? "Light Mode" : "Dark Mode"}</div>
+          <div className="mobile-home-tile-count">Switch appearance</div>
+        </div>
         <div className="mobile-home-tile-arrow">{'\u203A'}</div>
       </div>
     </div>
