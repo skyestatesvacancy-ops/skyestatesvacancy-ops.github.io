@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PropertyOro — Lead Tracker</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #fff8f0 0%, #fff5f5 30%, #f0f4ff 70%, #faf5ff 100%);
+    color: #1a1a2e;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Layout */
+  .app-layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 260px; min-height: 100vh; padding: 2rem 1.25rem;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 50;
+  }
+  .sidebar-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 2.5rem; padding: 0 0.5rem; }
+  .sidebar-logo-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;
+  }
+  .sidebar-logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .sidebar-logo-sub { font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 0.7rem 1rem; border-radius: 12px;
+    cursor: pointer; transition: all 0.2s; font-size: 14px; font-weight: 500; color: #a5b4c8;
+    margin-bottom: 4px; text-decoration: none; position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,0.15); color: #fff; }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: -1.25rem; top: 50%; transform: translateY(-50%);
+    width: 4px; height: 24px; border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #f59e0b, #ef4444);
+  }
+  .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; background: rgba(245,158,11,0.2); color: #f59e0b;
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+  }
+  .sidebar-section { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; padding: 1.5rem 1rem 0.5rem; }
+
+  .sidebar-bottom {
+    margin-top: auto; padding: 1rem; border-radius: 12px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-bottom-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* Main content */
+  .main { flex: 1; margin-left: 260px; padding: 2rem 2.5rem; }
+
+  /* Header */
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .page-title { font-size: 28px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.5px; }
+  .page-subtitle { font-size: 14px; color: #64748b; margin-top: 4px; font-weight: 500; }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 2rem; }
+  .stat-card {
+    background: #fff; border: 1px solid #f1f1f4; border-radius: 16px; padding: 1.25rem 1rem;
+    cursor: pointer; transition: all 0.3s; text-align: center; position: relative; overflow: hidden;
+  }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+  .stat-card.active { border-color: transparent; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+  .stat-card-icon { font-size: 28px; margin-bottom: 8px; }
+  .stat-card-count { font-size: 32px; font-weight: 800; color: #1a1a2e; }
+  .stat-card-label { font-size: 12px; font-weight: 600; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; }
+
+  /* Search bar */
+  .search-bar {
+    display: flex; gap: 10px; margin-bottom: 1.75rem;
+  }
+  .search-bar input, .search-bar select {
+    font-family: inherit; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 12px 16px; outline: none; background: #fff; color: #1a1a2e; transition: all 0.2s;
+  }
+  .search-bar input { flex: 1; }
+  .search-bar input:focus, .search-bar select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+  .search-bar input::placeholder { color: #94a3b8; }
+  .search-bar select { min-width: 160px; cursor: pointer; }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; border: none;
+    font-weight: 700; border-radius: 12px; padding: 12px 24px; cursor: pointer;
+    font-size: 14px; transition: all 0.2s; box-shadow: 0 4px 15px rgba(245,158,11,0.3);
+    font-family: inherit;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,158,11,0.4); }
+
+  .btn-save {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: none;
+    font-weight: 700; border-radius: 10px; padding: 10px 20px; cursor: pointer;
+    font-size: 14px; transition: all 0.2s; font-family: inherit;
+  }
+  .btn-save:hover { opacity: 0.9; }
+  .btn-cancel {
+    background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+    font-weight: 600; border-radius: 10px; padding: 10px 20px; cursor: pointer;
+    font-size: 14px; transition: all 0.2s; font-family: inherit;
+  }
+  .btn-cancel:hover { background: #e2e8f0; }
+  .btn-danger {
+    background: #fff5f5; color: #ef4444; border: 1px solid #fecaca;
+    font-weight: 600; border-radius: 10px; padding: 10px 20px; cursor: pointer;
+    font-size: 14px; transition: all 0.2s; font-family: inherit;
+  }
+  .btn-danger:hover { background: #fef2f2; }
+  .btn-edit {
+    background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;
+    font-weight: 600; border-radius: 10px; padding: 6px 16px; cursor: pointer;
+    font-size: 12px; transition: all 0.2s; font-family: inherit;
+  }
+  .btn-edit:hover { background: #f1f5f9; color: #334155; }
+
+  /* Lead cards */
+  .lead-list { display: flex; flex-direction: column; gap: 12px; }
+  .lead-card {
+    background: #fff; border: 1px solid #f1f1f4; border-radius: 16px;
+    padding: 1.25rem 1.5rem; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .lead-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.06); border-color: #e2e8f0; }
+  .lead-card-accent { position: absolute; top: 0; left: 0; bottom: 0; width: 4px; }
+  .lead-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .lead-card-body { flex: 1; min-width: 0; }
+  .lead-card-price { font-weight: 800; font-size: 20px; color: #ef4444; margin-right: 12px; }
+  .lead-card-location { font-size: 15px; color: #1a1a2e; font-weight: 600; }
+  .lead-card-desc { font-size: 14px; color: #475569; margin-top: 8px; line-height: 1.6; word-break: break-word; }
+  .lead-card-link {
+    font-size: 13px; color: #6366f1; text-decoration: none; display: inline-block;
+    margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+  }
+  .lead-card-link:hover { text-decoration: underline; }
+  .lead-card-meta { font-size: 14px; color: #1a1a2e; margin-top: 8px; font-weight: 500; }
+  .lead-card-detail { font-size: 13px; margin-top: 4px; font-weight: 500; }
+  .lead-card-notes { font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.5; font-style: italic; }
+  .lead-card-date { font-size: 12px; color: #94a3b8; font-weight: 500; }
+  .lead-card-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0; }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px;
+    cursor: pointer; transition: all 0.2s; border: none; font-family: inherit;
+  }
+  .status-badge:hover { transform: scale(1.05); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  /* Status select (in card) */
+  .status-select {
+    font-size: 12px; padding: 6px 12px; border-radius: 20px; cursor: pointer;
+    font-weight: 700; border: 2px solid; background: transparent; font-family: inherit;
+    transition: all 0.2s; outline: none;
+  }
+  .status-select option { background: #fff; color: #1a1a2e; }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(15,15,30,0.5); display: flex;
+    align-items: center; justify-content: center; z-index: 100; padding: 16px;
+    backdrop-filter: blur(8px); animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: #fff; border-radius: 20px; padding: 2rem; width: 100%; max-width: 100vw; height: auto;
+    max-height: 95vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+    animation: slideUp 0.25s ease; margin: auto;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .modal-title { font-weight: 800; font-size: 20px; color: #1a1a2e; margin-bottom: 1.5rem; }
+  .modal label { font-size: 13px; color: #64748b; display: block; margin-bottom: 6px; font-weight: 600; }
+  .modal input, .modal select, .modal textarea {
+    font-family: inherit; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 10px 14px; outline: none; background: #fafbfc; color: #1a1a2e; width: 100%;
+    transition: all 0.2s;
+  }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: #fff; }
+  .modal input::placeholder, .modal textarea::placeholder { color: #94a3b8; }
+  .modal textarea { resize: vertical; }
+  .modal-section { border: 1px solid; border-radius: 12px; padding: 1rem; margin-bottom: 14px; }
+  .modal-section-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 5rem 2rem; color: #94a3b8;
+    background: #fff; border-radius: 20px; border: 2px dashed #e2e8f0;
+  }
+  .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state-text { font-size: 16px; font-weight: 600; color: #64748b; }
+  .empty-state-sub { font-size: 14px; color: #94a3b8; margin-top: 8px; }
+
+  /* Error banner */
+  .error-banner {
+    background: linear-gradient(135deg, #fff5f5, #fef2f2); border: 1px solid #fecaca;
+    border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+    font-size: 14px; color: #dc2626; font-weight: 500; display: flex; align-items: center; gap: 10px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+  /* ── Mobile home tile ── */
+  .mobile-home-tile {
+    background: #fff; border: 1px solid #f1f1f4; border-radius: 14px;
+    padding: 1rem 1.1rem; display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .mobile-home-tile:hover, .mobile-home-tile:active { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+  .mobile-home-tile-icon {
+    width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-size: 22px; flex-shrink: 0;
+  }
+  .mobile-home-tile-info { flex: 1; }
+  .mobile-home-tile-label { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+  .mobile-home-tile-count { font-size: 12px; color: #64748b; font-weight: 500; margin-top: 2px; }
+  .mobile-home-tile-arrow { color: #cbd5e1; font-size: 18px; font-weight: 700; }
+  .mobile-home-tile-number {
+    font-size: 24px; font-weight: 800; margin-left: auto; margin-right: 8px;
+  }
+  .mobile-home-tile-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+
+  /* Mobile back button */
+  .mobile-back {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600;
+    color: #6366f1; background: none; border: none; cursor: pointer; padding: 8px 0;
+    font-family: inherit; margin-bottom: 8px;
+  }
+  .mobile-back:hover { opacity: 0.8; }
+
+  /* Mobile status header */
+  .mobile-status-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;
+    padding: 0.75rem 1rem; background: #fff; border-radius: 14px; border: 1px solid #f1f1f4;
+  }
+  .mobile-status-header-icon { font-size: 28px; }
+  .mobile-status-header-label { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+  .mobile-status-header-count { font-size: 13px; color: #64748b; font-weight: 500; }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 1rem 0.75rem; }
+    .page-header { margin-bottom: 1rem; }
+    .page-title { font-size: 22px; }
+    .page-subtitle { font-size: 12px; }
+    .btn-primary { padding: 10px 16px; font-size: 13px; border-radius: 10px; }
+
+    /* Hide desktop elements on mobile home */
+    .desktop-only { display: none; }
+
+    /* Search — stacked */
+    .search-bar { flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+    .search-bar input, .search-bar select { font-size: 13px; padding: 10px 12px; border-radius: 10px; }
+    .search-bar select { min-width: unset; display: none; }
+
+    /* Lead cards — tighter */
+    .lead-list { gap: 8px; }
+    .lead-card { padding: 0.85rem 1rem; border-radius: 12px; }
+    .lead-card-accent { width: 3px; }
+    .lead-card-top { flex-direction: column; gap: 8px; }
+    .lead-card-body { padding-left: 6px; }
+    .lead-card-price { font-size: 16px; }
+    .lead-card-location { font-size: 12px; }
+    .lead-card-desc { font-size: 12px; margin-top: 4px; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .lead-card-link { font-size: 11px; }
+    .lead-card-meta { font-size: 12px; }
+    .lead-card-detail { font-size: 12px; }
+    .lead-card-notes { font-size: 11px; margin-top: 4px; }
+    .lead-card-date { font-size: 11px; }
+    .lead-card-actions { flex-direction: row; align-items: center; gap: 8px; }
+    .status-select { font-size: 11px; padding: 5px 10px; }
+    .btn-edit { font-size: 11px; padding: 5px 12px; }
+
+    /* Modal */
+    .modal { padding: 1.25rem; border-radius: 16px; }
+    .modal-title { font-size: 18px; margin-bottom: 1rem; }
+
+    /* Empty state */
+    .empty-state { padding: 3rem 1.5rem; }
+    .empty-state-icon { font-size: 36px; }
+    .empty-state-text { font-size: 14px; }
+  }
+
+  @media (min-width: 901px) {
+    .mobile-only { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const SUPABASE_URL = "https://kysyrwgwubmfcgehayou.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5c3lyd2d3dWJtZmNnZWhheW91Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDI5ODE3MywiZXhwIjoyMDg5ODc0MTczfQ.Kxaa_ODVN8ufZxLz4tM2wiFc8TxWr2bXM9P6PJAe4jM";
+const HEADERS = { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` };
+
+const STATUSES = [
+  { key: "waiting",    label: "Waiting",   icon: "🔍", color: "#3b82f6", bg: "#eff6ff",   border: "#bfdbfe", gradient: "linear-gradient(135deg, #3b82f6, #06b6d4)" },
+  { key: "viewing",    label: "Viewing",   icon: "👀", color: "#7c3aed", bg: "#f5f3ff",   border: "#c4b5fd", gradient: "linear-gradient(135deg, #7c3aed, #a855f7)" },
+  { key: "potential",  label: "Potential", icon: "🔥", color: "#ea580c", bg: "#fff7ed",   border: "#fed7aa", gradient: "linear-gradient(135deg, #ea580c, #f59e0b)" },
+  { key: "offer",      label: "Offer Made",icon: "💰", color: "#059669", bg: "#ecfdf5",   border: "#a7f3d0", gradient: "linear-gradient(135deg, #059669, #10b981)" },
+  { key: "pos",        label: "POS",       icon: "📝", color: "#d97706", bg: "#fffbeb",   border: "#fde68a", gradient: "linear-gradient(135deg, #d97706, #f59e0b)" },
+  { key: "contract",   label: "Contract",  icon: "✍️", color: "#dc2626", bg: "#fef2f2",   border: "#fecaca", gradient: "linear-gradient(135deg, #dc2626, #ef4444)" },
+  { key: "dead",       label: "Dead Lead", icon: "💀", color: "#6b7280", bg: "#f3f4f6",   border: "#d1d5db", gradient: "linear-gradient(135deg, #6b7280, #9ca3af)" },
+  { key: "selling",   label: "Selling",   icon: "🏷️", color: "#0891b2", bg: "#ecfeff",   border: "#a5f3fc", gradient: "linear-gradient(135deg, #0891b2, #06b6d4)" },
+];
+const STATUS_MAP = Object.fromEntries(STATUSES.map(s => [s.key, s]));
+
+const EMPTY_FORM = {
+  link: "", price: "", location: "", description: "",
+  ownerName: "", ownerPhone: "",
+  status: "waiting", notes: "",
+  dateFound: new Date().toISOString().slice(0, 10),
+  appointmentDate: "", appointmentTime: "",
+  offerAmount: "", offerDetails: "",
+  posDate: "", posTime: "",
+};
+
+async function dbGetLeads() {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/leads?order=id.desc`, { headers: HEADERS });
+  return r.json();
+}
+async function dbInsert(lead) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/leads`, { method: "POST", headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(lead) });
+    if (!res.ok) console.error("Insert failed:", res.status, res.statusText);
+  } catch (e) { console.error("Insert error:", e.message); }
+}
+async function dbUpdate(lead) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${lead.id}`, { method: "PATCH", headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(lead) });
+    if (!res.ok) console.error("Update failed:", res.status, res.statusText);
+  } catch (e) { console.error("Update error:", e.message); }
+}
+async function dbDelete(id) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${id}`, { method: "DELETE", headers: HEADERS });
+    if (!res.ok) console.error("Delete failed:", res.status, res.statusText);
+  } catch (e) { console.error("Delete error:", e.message); }
+}
+
+function Sidebar({ counts, totalLeads, filter, onFilterChange }) {
+  return (
+    <div className="sidebar">
+      <div className="sidebar-logo">
+        <div className="sidebar-logo-icon">O</div>
+        <div>
+          <div className="sidebar-logo-text">PropertyOro</div>
+          <div className="sidebar-logo-sub">Lead Tracker</div>
+        </div>
+      </div>
+
+      <div className="sidebar-section">Pipeline</div>
+      <div className={`nav-item ${filter === "all" ? "active" : ""}`} onClick={() => onFilterChange("all")}><span className="nav-icon">📊</span> Dashboard <span className="nav-badge">{totalLeads}</span></div>
+
+      {STATUSES.map(s => (
+        <div key={s.key} className={`nav-item ${filter === s.key ? "active" : ""}`} onClick={() => onFilterChange(s.key)}>
+          <span className="nav-icon">{s.icon}</span> {s.label}
+          {counts[s.key] > 0 && <span className="nav-badge">{counts[s.key]}</span>}
+        </div>
+      ))}
+
+      <div className="sidebar-section">Tools</div>
+      <div className="nav-item"><span className="nav-icon">🤖</span> Auto-Scanner</div>
+      <div className="nav-item"><span className="nav-icon">📈</span> Analytics</div>
+      <div className="nav-item"><span className="nav-icon">⚙️</span> Settings</div>
+
+      <div className="sidebar-bottom">
+        <div style={{ fontSize: 13, fontWeight: 600 }}>
+          <span className="sidebar-bottom-dot"></span> System Online
+        </div>
+        <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+          Scanner + Listener active
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DateTimeModal({ title, accentColor, dateVal, timeVal, onClose, onSave }) {
+  const [date, setDate] = useState(dateVal || "");
+  const [time, setTime] = useState(timeVal || "");
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <p className="modal-title" style={{ color: accentColor }}>{title}</p>
+        <label>Date</label>
+        <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ marginBottom: 14 }} />
+        <label>Time</label>
+        <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ marginBottom: 20 }} />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-save" onClick={() => onSave(date, time)}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OfferModal({ lead, onClose, onSave }) {
+  const [amount, setAmount]   = useState(lead.offerAmount || "");
+  const [details, setDetails] = useState(lead.offerDetails || "");
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <p className="modal-title" style={{ color: "#059669" }}>Offer Details</p>
+        <label>Offer amount</label>
+        <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 620,000" style={{ marginBottom: 14 }} />
+        <label>Offer details</label>
+        <textarea value={details} onChange={e => setDetails(e.target.value)} rows={4} placeholder="e.g. Subject to finance, completion in 3 months..." style={{ marginBottom: 20 }} />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-save" onClick={() => onSave(amount, details)}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditModal({ lead, onClose, onSave, onDelete }) {
+  // Auto-populate empty fields from lead data (from scanner enrichment)
+  // Migrate appointmentDate/appointmentTime to viewingDate/viewingTime
+  const initialForm = {
+    ...lead,
+    ownerPhone: lead.ownerPhone || lead.phone || "",
+    price: lead.price || "",
+    location: lead.location || "",
+    viewingDate: lead.viewingDate || lead.appointmentDate || "",
+    viewingTime: lead.viewingTime || lead.appointmentTime || "",
+    viewingAddress: lead.viewingAddress || "",
+    posAddress: lead.posAddress || "",
+    posNotaryName: lead.posNotaryName || "",
+    posNotaryAddress: lead.posNotaryAddress || "",
+    contractDate: lead.contractDate || "",
+    contractTime: lead.contractTime || "",
+    contractAddress: lead.contractAddress || "",
+    contractNotaryName: lead.contractNotaryName || "",
+    contractNotaryAddress: lead.contractNotaryAddress || "",
+  };
+  const [form, setForm] = useState(initialForm);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // Helper to generate Google Calendar URL with event details
+  const getCalendarUrl = (date, time, type, address, notaryName) => {
+    if (!date) return "#";
+
+    // Parse date and time for the event
+    const [year, month, day] = date.split("-");
+    const [hours, minutes] = time ? time.split(":") : ["14", "00"];
+    const startTime = `${year}${month}${day}T${hours}${minutes}00`;
+    const endTime = `${year}${month}${day}T${String(parseInt(hours) + 1).padStart(2, "0")}${minutes}00`;
+
+    // Build event title and details based on type
+    let eventTitle = "";
+    let eventDetails = "";
+    let eventLocation = "";
+
+    if (type === "viewing") {
+      eventTitle = `Viewing - ${form.location || "Property"}`;
+      eventDetails = `Property Details:\n${form.description || "No details provided"}\n\nAddress: ${address || "To be confirmed"}`;
+      eventLocation = address || form.location || "";
+    } else if (type === "pos") {
+      eventTitle = `POS - ${form.location || "Property"}`;
+      eventDetails = `Property Details:\n${form.description || "No details provided"}\n\nNotary: ${notaryName || "To be confirmed"}\nLocation: ${address || "To be confirmed"}`;
+      eventLocation = address || "";
+    } else if (type === "contract") {
+      eventTitle = `Contract - ${form.location || "Property"}`;
+      eventDetails = `Property Details:\n${form.description || "No details provided"}\n\nNotary: ${notaryName || "To be confirmed"}\nLocation: ${address || "To be confirmed"}`;
+      eventLocation = address || "";
+    }
+
+    // Build URL with properly encoded parameters
+    const baseUrl = "https://calendar.google.com/calendar/u/0/r/eventedit";
+    const params = {
+      text: eventTitle,
+      dates: `${startTime}/${endTime}`,
+      details: eventDetails,
+      location: eventLocation,
+      ctz: "UTC"
+    };
+
+    // Manually build query string to ensure proper encoding
+    const queryString = Object.entries(params)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join("&");
+
+    return `${baseUrl}?${queryString}`;
+  };
+  return (
+    <div className="overlay">
+      <div className="modal">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <p className="modal-title" style={{ margin: 0 }}>{lead.id ? "Edit Lead" : "New Lead"}</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#e53e3e", fontSize: 28, lineHeight: 1, cursor: "pointer", padding: "0 4px" }}>&times;</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12, marginBottom: 14 }}>
+          <div>
+            <label>Property link</label>
+            <input value={form.link} onChange={e => set("link", e.target.value)} placeholder="https://facebook.com/marketplace/item/..." />
+            {form.link && (
+              <a href={form.link} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: 6, color: "#6366f1", textDecoration: "underline", fontSize: "13px" }}>
+                🔗 Open link
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <div>
+            <label>Price</label>
+            <input value={form.price} onChange={e => set("price", e.target.value)} placeholder="e.g. 450,000" style={{ fontSize: "16px", fontWeight: "600" }} />
+          </div>
+          <div>
+            <label>Location</label>
+            <input value={form.location} onChange={e => set("location", e.target.value)} placeholder="e.g. Sliema" style={{ fontSize: "16px", fontWeight: "600" }} />
+          </div>
+        </div>
+
+        <label>Description (Full Details)</label>
+        <textarea value={form.description} onChange={e => set("description", e.target.value)} rows={12} placeholder="e.g. House of Character in Gharghur, 3 bedrooms, large terrace..." style={{ marginBottom: 14 }} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <div>
+            <label>Owner name</label>
+            <input value={form.ownerName} onChange={e => set("ownerName", e.target.value)} placeholder="e.g. John Borg" />
+          </div>
+          <div>
+            <label>Owner phone</label>
+            <input value={form.ownerPhone} onChange={e => set("ownerPhone", e.target.value)} placeholder="e.g. +356 9999 9999" />
+            {form.ownerPhone && form.ownerPhone.length >= 8 && (
+              <a href={`tel:${form.ownerPhone.replace(/\s/g, "")}`} style={{ display: "inline-block", marginTop: 6, color: "#059669", textDecoration: "underline", fontWeight: "600", fontSize: "13px" }}>
+                📞 Call {form.ownerPhone}
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <div>
+            <label>Status</label>
+            <select value={form.status} onChange={e => set("status", e.target.value)}>
+              {form.status === "selling"
+                ? <>
+                    <option value="selling">🏷️ Selling</option>
+                    <option value="pos">📝 POS</option>
+                    <option value="contract">✍️ Contract</option>
+                  </>
+                : <>
+                    {STATUSES.filter(s => s.key !== "selling").map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                    {!lead.id && <option value="selling">🏷️ Selling</option>}
+                  </>
+              }
+            </select>
+          </div>
+          <div>
+            <label>Date found</label>
+            <input type="date" value={form.dateFound} onChange={e => set("dateFound", e.target.value)} />
+          </div>
+        </div>
+
+        {form.status === "viewing" && (
+          <div className="modal-section" style={{ borderColor: "#c4b5fd" }}>
+            <p className="modal-section-title" style={{ color: "#7c3aed" }}>👀 Viewing</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 12, marginBottom: 12 }}>
+              <div><label style={{ color: "#7c3aed" }}>Date</label><input type="date" value={form.viewingDate} onChange={e => set("viewingDate", e.target.value)} /></div>
+              <div><label style={{ color: "#7c3aed" }}>Time</label><input type="time" value={form.viewingTime} onChange={e => set("viewingTime", e.target.value)} /></div>
+              <div><label style={{ color: "#7c3aed" }}>Address</label><input value={form.viewingAddress} onChange={e => set("viewingAddress", e.target.value)} placeholder="e.g. 123 Main St" /></div>
+            </div>
+            {form.viewingDate && <a href={getCalendarUrl(form.viewingDate, form.viewingTime, "viewing", form.viewingAddress)} target="_blank" rel="noreferrer" style={{ color: "#7c3aed", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
+          </div>
+        )}
+
+        {(form.offerAmount || form.offerDetails) && (
+          <div className="modal-section" style={{ borderColor: "#a7f3d0" }}>
+            <p className="modal-section-title" style={{ color: "#059669" }}>Offer</p>
+            <label style={{ color: "#059669" }}>Amount</label>
+            <input value={form.offerAmount} onChange={e => set("offerAmount", e.target.value)} placeholder="e.g. 620,000" style={{ marginBottom: 12 }} />
+            <label style={{ color: "#059669" }}>Details</label>
+            <textarea value={form.offerDetails} onChange={e => set("offerDetails", e.target.value)} rows={2} />
+          </div>
+        )}
+
+        {form.status === "pos" && (
+          <div className="modal-section" style={{ borderColor: "#fde68a" }}>
+            <p className="modal-section-title" style={{ color: "#d97706" }}>📝 POS</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 12, marginBottom: 12 }}>
+              <div><label style={{ color: "#d97706" }}>Date</label><input type="date" value={form.posDate} onChange={e => set("posDate", e.target.value)} /></div>
+              <div><label style={{ color: "#d97706" }}>Time</label><input type="time" value={form.posTime} onChange={e => set("posTime", e.target.value)} /></div>
+              <div><label style={{ color: "#d97706" }}>Address</label><input value={form.posAddress} onChange={e => set("posAddress", e.target.value)} placeholder="e.g. Notary office" /></div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div><label style={{ color: "#d97706" }}>Notary Name</label><input value={form.posNotaryName} onChange={e => set("posNotaryName", e.target.value)} placeholder="e.g. John Borg" /></div>
+              <div><label style={{ color: "#d97706" }}>Notary Address</label><input value={form.posNotaryAddress} onChange={e => set("posNotaryAddress", e.target.value)} placeholder="e.g. Main St, Valletta" /></div>
+            </div>
+            {form.posDate && <a href={getCalendarUrl(form.posDate, form.posTime, "pos", form.posAddress, form.posNotaryName)} target="_blank" rel="noreferrer" style={{ color: "#d97706", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
+          </div>
+        )}
+
+        {form.status === "contract" && (
+          <div className="modal-section" style={{ borderColor: "#f87171" }}>
+            <p className="modal-section-title" style={{ color: "#dc2626" }}>✍️ Contract</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 12, marginBottom: 12 }}>
+              <div><label style={{ color: "#dc2626" }}>Date</label><input type="date" value={form.contractDate} onChange={e => set("contractDate", e.target.value)} /></div>
+              <div><label style={{ color: "#dc2626" }}>Time</label><input type="time" value={form.contractTime} onChange={e => set("contractTime", e.target.value)} /></div>
+              <div><label style={{ color: "#dc2626" }}>Address</label><input value={form.contractAddress} onChange={e => set("contractAddress", e.target.value)} placeholder="e.g. Notary office" /></div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div><label style={{ color: "#dc2626" }}>Notary Name</label><input value={form.contractNotaryName} onChange={e => set("contractNotaryName", e.target.value)} placeholder="e.g. John Borg" /></div>
+              <div><label style={{ color: "#dc2626" }}>Notary Address</label><input value={form.contractNotaryAddress} onChange={e => set("contractNotaryAddress", e.target.value)} placeholder="e.g. Main St, Valletta" /></div>
+            </div>
+            {form.contractDate && <a href={getCalendarUrl(form.contractDate, form.contractTime, "contract", form.contractAddress, form.contractNotaryName)} target="_blank" rel="noreferrer" style={{ color: "#dc2626", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
+          </div>
+        )}
+
+        <label>Notes</label>
+        <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={4} placeholder="e.g. Seller seems motivated, needs to be close to school..." style={{ marginBottom: 14 }} />
+
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1.5rem" }}>
+          <div>{lead.id && <button className="btn-danger" onClick={() => onDelete(lead.id)}>Delete</button>}</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn-cancel" onClick={onClose}>Cancel</button>
+            <button className="btn-save" onClick={() => onSave(form)}>Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggleSelect }) {
+  const s = STATUS_MAP[lead.status] || STATUS_MAP.waiting;
+  return (
+    <div className="lead-card" onClick={() => selectable ? onToggleSelect(lead.id) : onEdit(lead)} style={{ cursor: "pointer", outline: selected ? "2px solid #e53e3e" : "none", outlineOffset: "2px" }}>
+      <div className="lead-card-accent" style={{ background: s.gradient }}></div>
+      {selectable && (
+        <input type="checkbox" checked={!!selected} onChange={e => { e.stopPropagation(); onToggleSelect(lead.id); }}
+          onClick={e => e.stopPropagation()}
+          style={{ position: "absolute", top: 10, right: 10, width: 18, height: 18, cursor: "pointer", accentColor: "#e53e3e" }} />
+      )}
+      <div className="lead-card-top">
+        <div className="lead-card-body" style={{ paddingLeft: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+            {lead.price && <span className="lead-card-price">{'\u20AC'}{Number(lead.price).toLocaleString() || lead.price}</span>}
+            {lead.location && <span className="lead-card-location">{lead.location}</span>}
+            <span className="lead-card-date" style={{ marginLeft: "auto" }}>{lead.dateFound}</span>
+          </div>
+          {lead.description && <p className="lead-card-desc">{lead.description}</p>}
+          {lead.link && (
+            <a href={lead.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="lead-card-link">
+              {lead.link}
+            </a>
+          )}
+          {(lead.ownerName || lead.ownerPhone) && (
+            <p className="lead-card-meta">
+              {lead.ownerName}{lead.ownerPhone && (
+                <>
+                  {" \u00B7 "}
+                  <a href={`tel:${lead.ownerPhone.replace(/\s/g, "")}`} onClick={e => e.stopPropagation()} style={{ color: "#059669", textDecoration: "underline", cursor: "pointer" }}>
+                    📞 {lead.ownerPhone}
+                  </a>
+                </>
+              )}
+            </p>
+          )}
+          {(lead.viewingDate || lead.appointmentDate) && (
+            <p className="lead-card-detail" style={{ color: "#7c3aed" }}>
+              👀 Viewing: {lead.viewingDate || lead.appointmentDate}{(lead.viewingTime || lead.appointmentTime) ? ` at ${lead.viewingTime || lead.appointmentTime}` : ""}{lead.viewingAddress ? ` — ${lead.viewingAddress}` : ""}
+              {" "}<a href={`https://calendar.google.com/calendar/u/0/r/eventedit?text=${encodeURIComponent("Viewing - " + (lead.location || "Property"))}&dates=${(lead.viewingDate || lead.appointmentDate || "").replace(/-/g, "")}T${(lead.viewingTime || lead.appointmentTime || "14:00").replace(":", "")}00/${(lead.viewingDate || lead.appointmentDate || "").replace(/-/g, "")}T${String(parseInt((lead.viewingTime || lead.appointmentTime || "14:00").split(":")[0]) + 1).padStart(2, "0")}${(lead.viewingTime || lead.appointmentTime || "14:00").split(":")[1]}00&details=${encodeURIComponent(lead.description || "")}&location=${encodeURIComponent(lead.viewingAddress || lead.location || "")}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "12px" }}>📅</a>
+            </p>
+          )}
+          {lead.posDate && (
+            <p className="lead-card-detail" style={{ color: "#d97706" }}>
+              📝 POS: {lead.posDate}{lead.posTime ? ` at ${lead.posTime}` : ""}{lead.posNotaryName ? ` — ${lead.posNotaryName}` : ""}{lead.posAddress ? ` @ ${lead.posAddress}` : ""}
+              {" "}<a href={`https://calendar.google.com/calendar/u/0/r/eventedit?text=${encodeURIComponent("POS - " + (lead.location || "Property"))}&dates=${(lead.posDate || "").replace(/-/g, "")}T${(lead.posTime || "14:00").replace(":", "")}00/${(lead.posDate || "").replace(/-/g, "")}T${String(parseInt((lead.posTime || "14:00").split(":")[0]) + 1).padStart(2, "0")}${(lead.posTime || "14:00").split(":")[1]}00&details=${encodeURIComponent("Notary: " + (lead.posNotaryName || "TBD") + "\n" + (lead.description || ""))}&location=${encodeURIComponent(lead.posAddress || "")}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "12px" }}>📅</a>
+            </p>
+          )}
+          {lead.contractDate && (
+            <p className="lead-card-detail" style={{ color: "#dc2626" }}>
+              ✍️ Contract: {lead.contractDate}{lead.contractTime ? ` at ${lead.contractTime}` : ""}{lead.contractNotaryName ? ` — ${lead.contractNotaryName}` : ""}{lead.contractAddress ? ` @ ${lead.contractAddress}` : ""}
+              {" "}<a href={`https://calendar.google.com/calendar/u/0/r/eventedit?text=${encodeURIComponent("Contract - " + (lead.location || "Property"))}&dates=${(lead.contractDate || "").replace(/-/g, "")}T${(lead.contractTime || "14:00").replace(":", "")}00/${(lead.contractDate || "").replace(/-/g, "")}T${String(parseInt((lead.contractTime || "14:00").split(":")[0]) + 1).padStart(2, "0")}${(lead.contractTime || "14:00").split(":")[1]}00&details=${encodeURIComponent("Notary: " + (lead.contractNotaryName || "TBD") + "\n" + (lead.description || ""))}&location=${encodeURIComponent(lead.contractAddress || "")}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "12px" }}>📅</a>
+            </p>
+          )}
+          {lead.offerAmount && (
+            <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 700 }}>
+              💰 Offer: {'\u20AC'}{Number(lead.offerAmount).toLocaleString() || lead.offerAmount}
+            </p>
+          )}
+          {lead.offerDetails && <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 400 }}>{lead.offerDetails}</p>}
+          {lead.notes && <p className="lead-card-notes">{lead.notes}</p>}
+        </div>
+        <div className="lead-card-actions">
+          <select className="status-select" value={lead.status}
+            onChange={e => { e.stopPropagation(); onStatusChange(lead.id, e.target.value); }}
+            style={{ color: s.color, borderColor: s.color, background: s.bg }}>
+            {lead.status === "selling"
+              ? <>
+                  <option value="selling">🏷️ Selling</option>
+                  <option value="pos">📝 POS</option>
+                  <option value="contract">✍️ Contract</option>
+                </>
+              : STATUSES.filter(st => st.key !== "selling").map(st => <option key={st.key} value={st.key}>{st.label}</option>)
+            }
+          </select>
+          <button className="btn-edit" onClick={e => { e.stopPropagation(); onEdit(lead); }}>
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [leads, setLeads]           = useState([]);
+  const [editModal, setEditModal]   = useState(null);
+  const [dateModal, setDateModal]   = useState(null);
+  const [offerModal, setOfferModal] = useState(null);
+  const [filter, setFilter]         = useState("all");
+  const [search, setSearch]         = useState("");
+  const [error, setError]           = useState(false);
+  const [mobileView, setMobileView] = useState("home"); // "home" or status key
+  const [selectedIds, setSelectedIds] = useState([]);
+  const isMobile = window.innerWidth <= 900;
+
+  const fetchLeads = () => {
+    dbGetLeads().then(data => { setLeads(Array.isArray(data) ? data : []); setError(false); }).catch(() => setError(true));
+  };
+
+  useEffect(() => { fetchLeads(); const t = setInterval(fetchLeads, 8000); return () => clearInterval(t); }, []);
+
+  const save = async (form) => {
+    console.log("Saving lead:", form);
+    try {
+      if (form.id) { await dbUpdate(form); } else { await dbInsert({ ...form, id: Date.now() }); }
+      console.log("Save successful");
+      fetchLeads(); setEditModal(null);
+    } catch (e) {
+      console.error("Save error:", e);
+      alert("Error saving lead: " + e.message);
+    }
+  };
+
+  const del = async (id) => { await dbDelete(id); fetchLeads(); setEditModal(null); };
+
+  const delSelected = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Delete ${selectedIds.length} lead${selectedIds.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    await Promise.all(selectedIds.map(id => dbDelete(id)));
+    setSelectedIds([]);
+    fetchLeads();
+  };
+
+  const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const selectAll = (ids) => setSelectedIds(ids);
+  const clearSelection = () => setSelectedIds([]);
+
+  const handleStatusChange = async (id, newStatus) => {
+    // For viewing/pos/contract, open date modal (automatic status set in saveDateModal)
+    if (newStatus === "viewing" || newStatus === "pos" || newStatus === "contract") {
+      setDateModal({ id, type: newStatus });
+    } else if (newStatus === "offer") {
+      setOfferModal(leads.find(l => l.id === id));
+    } else {
+      // For other statuses, update immediately
+      const lead = leads.find(l => l.id === id);
+      await dbUpdate({ ...lead, status: newStatus });
+      fetchLeads();
+    }
+  };
+
+  const saveDateModal = async (date, time) => {
+    const lead = leads.find(l => l.id === dateModal.id);
+    let updated;
+    if (dateModal.type === "viewing") {
+      updated = { ...lead, status: "viewing", viewingDate: date, viewingTime: time };
+    } else if (dateModal.type === "pos") {
+      updated = { ...lead, status: "pos", posDate: date, posTime: time };
+    } else if (dateModal.type === "contract") {
+      updated = { ...lead, status: "contract", contractDate: date, contractTime: time };
+    }
+    await dbUpdate(updated); fetchLeads(); setDateModal(null);
+  };
+
+  const saveOffer = async (amount, details) => {
+    const lead = { ...offerModal, status: "offer", offerAmount: amount, offerDetails: details };
+    await dbUpdate(lead); fetchLeads(); setOfferModal(null);
+  };
+
+  const filtered = leads.filter(l => {
+    const activeFilter = isMobile && mobileView !== "home" ? mobileView : filter;
+    const matchStatus = activeFilter === "all" || l.status === activeFilter;
+    const matchSearch = !search || [l.location, l.notes, l.link, l.price, l.description, l.ownerName, l.ownerPhone].some(v => v?.toLowerCase().includes(search.toLowerCase()));
+    return matchStatus && matchSearch;
+  });
+
+  const counts = Object.fromEntries(STATUSES.map(s => [s.key, leads.filter(l => l.status === s.key).length]));
+  const modalStatus = dateModal ? STATUS_MAP[dateModal.type] : null;
+  const modalLead   = dateModal ? leads.find(l => l.id === dateModal.id) : null;
+
+  // Mobile: tap a status tile → drill into that list
+  const openMobileStatus = (key) => { setMobileView(key); setSearch(""); };
+  const backToHome = () => { setMobileView("home"); setSearch(""); };
+  const activeStatus = mobileView !== "home" ? STATUS_MAP[mobileView] : null;
+
+  // ── MOBILE HOME VIEW ──
+  const mobileHome = (
+    <div className="main">
+      <div className="page-header" style={{ flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
+        <div>
+          <p className="page-title">PropertyOro</p>
+          <p className="page-subtitle">{leads.length} leads in pipeline</p>
+        </div>
+        <button className="btn-primary" style={{ width: "100%" }} onClick={() => setEditModal({ ...EMPTY_FORM, status: filter === "selling" ? "selling" : "waiting" })}>+ New Lead</button>
+      </div>
+
+      {error && (
+        <div className="error-banner">
+          <span style={{ fontSize: 18 }}>&#9888;</span> Cannot connect to Supabase
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {STATUSES.map(s => (
+          <div key={s.key} className="mobile-home-tile" onClick={() => openMobileStatus(s.key)}>
+            <div className="mobile-home-tile-icon" style={{ background: s.bg }}>{s.icon}</div>
+            <div className="mobile-home-tile-info">
+              <div className="mobile-home-tile-label">{s.label}</div>
+              <div className="mobile-home-tile-count">{counts[s.key] || 0} lead{counts[s.key] !== 1 ? 's' : ''}</div>
+            </div>
+            <div className="mobile-home-tile-number" style={{ color: s.color }}>{counts[s.key] || 0}</div>
+            <div className="mobile-home-tile-arrow">{'\u203A'}</div>
+            <div className="mobile-home-tile-bar" style={{ background: s.gradient }}></div>
+          </div>
+        ))}
+      </div>
+
+      {/* All leads quick access */}
+      <div className="mobile-home-tile" style={{ marginTop: 8 }} onClick={() => { setMobileView("all"); }}>
+        <div className="mobile-home-tile-icon" style={{ background: "#f1f5f9" }}>{"📋"}</div>
+        <div className="mobile-home-tile-info">
+          <div className="mobile-home-tile-label">All Leads</div>
+          <div className="mobile-home-tile-count">View entire pipeline</div>
+        </div>
+        <div className="mobile-home-tile-number" style={{ color: "#475569" }}>{leads.length}</div>
+        <div className="mobile-home-tile-arrow">{'\u203A'}</div>
+      </div>
+    </div>
+  );
+
+  // ── MOBILE LIST VIEW ──
+  const mobileListView = (
+    <div className="main">
+      <button className="mobile-back" onClick={backToHome}>{'\u2190'} Back</button>
+
+      {activeStatus && (
+        <div className="mobile-status-header">
+          <div className="mobile-status-header-icon">{activeStatus.icon}</div>
+          <div>
+            <div className="mobile-status-header-label">{activeStatus.label}</div>
+            <div className="mobile-status-header-count">{counts[mobileView] || 0} lead{counts[mobileView] !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+      )}
+      {mobileView === "all" && (
+        <div className="mobile-status-header">
+          <div className="mobile-status-header-icon">{"📋"}</div>
+          <div>
+            <div className="mobile-status-header-label">All Leads</div>
+            <div className="mobile-status-header-count">{leads.length} total</div>
+          </div>
+        </div>
+      )}
+
+      <div className="search-bar">
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." />
+      </div>
+
+      {mobileView === "dead" && filtered.length > 0 && (
+        <div style={{ display: "flex", gap: 8, padding: "0 0 10px 0", alignItems: "center" }}>
+          <button onClick={() => selectAll(filtered.map(l => l.id))} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Select All</button>
+          {selectedIds.length > 0 && <button onClick={() => clearSelection()} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Clear</button>}
+          {selectedIds.length > 0 && <button onClick={delSelected} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: "none", background: "#e53e3e", color: "#fff", cursor: "pointer", fontWeight: 700 }}>🗑 Delete {selectedIds.length}</button>}
+        </div>
+      )}
+      {filtered.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">{activeStatus ? activeStatus.icon : '🏗️'}</div>
+          <p className="empty-state-text">No leads here</p>
+        </div>
+      ) : (
+        <div className="lead-list">
+          {filtered.map(l => <LeadCard key={l.id} lead={l} onEdit={setEditModal} onStatusChange={handleStatusChange}
+            selectable={mobileView === "dead"} selected={selectedIds.includes(l.id)} onToggleSelect={toggleSelect} />)}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── DESKTOP VIEW ──
+  const desktopView = (
+    <div className="main">
+      <div className="page-header">
+        <div>
+          <p className="page-title">Dashboard</p>
+          <p className="page-subtitle">{leads.length} leads in pipeline {'\u00B7'} {counts.waiting || 0} awaiting action</p>
+        </div>
+        <button className="btn-primary" onClick={() => setEditModal({ ...EMPTY_FORM, status: filter === "selling" ? "selling" : "waiting" })}>+ New Lead</button>
+      </div>
+
+      {error && (
+        <div className="error-banner">
+          <span style={{ fontSize: 18 }}>&#9888;</span>
+          Cannot connect to Supabase — check your internet connection
+        </div>
+      )}
+
+      <div className="stat-grid">
+        {STATUSES.map(s => (
+          <div key={s.key} className={`stat-card ${filter === s.key ? 'active' : ''}`}
+            onClick={() => setFilter(s.key === filter ? "all" : s.key)}
+            style={filter === s.key ? { background: s.bg, borderColor: s.border } : {}}>
+            <div className="stat-card-icon">{s.icon}</div>
+            <div className="stat-card-info">
+              <div className="stat-card-count" style={filter === s.key ? { color: s.color } : {}}>{counts[s.key] || 0}</div>
+              <div className="stat-card-label" style={filter === s.key ? { color: s.color } : {}}>{s.label}</div>
+            </div>
+            <div className="stat-card-bar" style={{ background: s.gradient }}></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="search-bar">
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads by location, price, notes..." />
+        <select value={filter} onChange={e => setFilter(e.target.value)}>
+          <option value="all">All statuses</option>
+          {STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+        </select>
+      </div>
+
+      {filter === "dead" && filtered.length > 0 && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
+          <button onClick={() => selectAll(filtered.map(l => l.id))} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Select All</button>
+          {selectedIds.length > 0 && <button onClick={() => clearSelection()} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Clear</button>}
+          {selectedIds.length > 0 && <button onClick={delSelected} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: "none", background: "#e53e3e", color: "#fff", cursor: "pointer", fontWeight: 700 }}>🗑 Delete {selectedIds.length}</button>}
+        </div>
+      )}
+      {filtered.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">🏗️</div>
+          <p className="empty-state-text">No leads yet</p>
+          <p className="empty-state-sub">Click + New Lead to start building your pipeline</p>
+        </div>
+      ) : (
+        <div className="lead-list">
+          {filtered.map(l => <LeadCard key={l.id} lead={l} onEdit={setEditModal} onStatusChange={handleStatusChange}
+            selectable={filter === "dead"} selected={selectedIds.includes(l.id)} onToggleSelect={toggleSelect} />)}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="app-layout">
+      <Sidebar counts={counts} totalLeads={leads.length} filter={filter} onFilterChange={setFilter} />
+
+      {isMobile
+        ? (mobileView === "home" ? mobileHome : mobileListView)
+        : desktopView
+      }
+
+      {editModal && <EditModal lead={editModal} onClose={() => setEditModal(null)} onSave={save} onDelete={del} />}
+      {dateModal && <DateTimeModal
+        title={`Set ${modalStatus.label} Date`}
+        accentColor={modalStatus.color}
+        dateVal={
+          dateModal.type === "viewing" ? modalLead?.viewingDate :
+          dateModal.type === "pos" ? modalLead?.posDate :
+          dateModal.type === "contract" ? modalLead?.contractDate : ""
+        }
+        timeVal={
+          dateModal.type === "viewing" ? modalLead?.viewingTime :
+          dateModal.type === "pos" ? modalLead?.posTime :
+          dateModal.type === "contract" ? modalLead?.contractTime : ""
+        }
+        onClose={() => setDateModal(null)} onSave={saveDateModal}
+      />}
+      {offerModal && <OfferModal lead={offerModal} onClose={() => setOfferModal(null)} onSave={saveOffer} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
