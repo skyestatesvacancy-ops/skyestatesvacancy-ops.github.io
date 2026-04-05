@@ -862,7 +862,56 @@ function OfferModal({ lead, onClose, onSave }) {
   );
 }
 
-function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange }) {
+function PreviewNotes({ lead, onSaveNotes }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(lead.userNotes || "");
+  const [saved, setSaved] = useState(false);
+
+  // Update text when navigating between leads
+  React.useEffect(() => { setText(lead.userNotes || ""); setEditing(false); setSaved(false); }, [lead.id]);
+
+  const save = () => {
+    onSaveNotes(lead.id, text);
+    setEditing(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  if (!editing && !lead.userNotes) {
+    return React.createElement("button", {
+      onClick: () => setEditing(true),
+      style: { marginTop: 10, padding: "10px 16px", borderRadius: 10, border: "1px dashed #d1d5db", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#6b7280", width: "100%", fontFamily: "inherit" }
+    }, "\uD83D\uDCDD Add Notes");
+  }
+
+  return React.createElement("div", { style: { marginTop: 10 } },
+    React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 4 } }, "My Notes"),
+    editing
+      ? React.createElement("div", null,
+          React.createElement("textarea", {
+            value: text, onChange: (e) => setText(e.target.value),
+            rows: 3, placeholder: "Write your notes about this property...",
+            style: { width: "100%", padding: 10, borderRadius: 10, border: "1px solid #d1d5db", fontSize: 14, fontFamily: "inherit", resize: "vertical" }
+          }),
+          React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 8 } },
+            React.createElement("button", {
+              onClick: save,
+              style: { padding: "6px 16px", borderRadius: 8, border: "none", background: "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit" }
+            }, "Save"),
+            React.createElement("button", {
+              onClick: () => { setEditing(false); setText(lead.userNotes || ""); },
+              style: { padding: "6px 16px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }
+            }, "Cancel"),
+          )
+        )
+      : React.createElement("div", { onClick: () => setEditing(true), style: { cursor: "pointer" } },
+          React.createElement("div", { style: { fontSize: 14, color: "#374151", whiteSpace: "pre-wrap", background: "#f9fafb", padding: 12, borderRadius: 10, border: "1px solid #f1f1f4" } }, lead.userNotes),
+          saved && React.createElement("div", { style: { fontSize: 12, color: "#16a34a", marginTop: 4 } }, "\u2713 Saved"),
+        )
+  );
+}
+
+function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange, onSaveNotes }) {
   const s = STATUS_MAP[lead.status] || STATUS_MAP.waiting;
   const price = lead.price ? "\u20AC" + Number(lead.price).toLocaleString() : "Price unknown";
   const phone = lead.ownerPhone || lead.phone || "";
@@ -1046,8 +1095,11 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
         React.createElement("div", { style: { fontSize: 14 } }, (lead.contractDate || "") + " " + (lead.contractTime || "") + (lead.contractNotaryName ? " \u2014 Notary: " + lead.contractNotaryName : ""))
       ),
 
-      // Notes
-      lead.notes && row("Notes", lead.notes),
+      // Details (auto-generated from scanner)
+      lead.detailNotes && row("Details", lead.detailNotes),
+
+      // User Notes (editable)
+      React.createElement(PreviewNotes, { lead, onSaveNotes }),
 
       // Spacer for action bar
       React.createElement("div", { style: { height: 70 } }),
@@ -1400,8 +1452,21 @@ function App() {
     localStorage.setItem("darkMode", dark);
   }, [dark]);
 
+  // Parse userNotes from notes field (separated by \n---\n)
+  const parseUserNotes = (lead) => {
+    if (!lead.notes) return { details: "", userNotes: "" };
+    const parts = lead.notes.split("\n---\n");
+    return { details: parts[0] || "", userNotes: parts[1] || "" };
+  };
+
   const fetchLeads = () => {
-    dbGetLeads().then(data => { setLeads(Array.isArray(data) ? data : []); setError(false); }).catch(() => setError(true));
+    dbGetLeads().then(data => {
+      const arr = Array.isArray(data) ? data : [];
+      // Attach parsed userNotes to each lead
+      arr.forEach(l => { const p = parseUserNotes(l); l.userNotes = p.userNotes; l.detailNotes = p.details; });
+      setLeads(arr);
+      setError(false);
+    }).catch(() => setError(true));
   };
 
   useEffect(() => { fetchLeads(); const t = setInterval(fetchLeads, 8000); return () => clearInterval(t); }, []);
@@ -1419,6 +1484,17 @@ function App() {
   };
 
   const del = async (id) => { await dbDelete(id); fetchLeads(); setEditModal(null); };
+
+  const saveUserNotes = async (id, userNotesText) => {
+    const lead = leads.find(l => l.id === id);
+    if (!lead) return;
+    const details = lead.detailNotes || "";
+    const newNotes = userNotesText ? details + "\n---\n" + userNotesText : details;
+    await dbUpdate({ ...lead, notes: newNotes });
+    fetchLeads();
+    // Update preview modal with new notes
+    setPreviewModal(p => p && p.id === id ? { ...p, userNotes: userNotesText, notes: newNotes } : p);
+  };
 
   const delSelected = async () => {
     if (selectedIds.length === 0) return;
@@ -1674,7 +1750,7 @@ function App() {
           : desktopView
       }
 
-      {previewModal && <PreviewModal lead={previewModal} onClose={() => setPreviewModal(null)} onEdit={(lead) => { setPreviewModal(null); setEditModal(lead); }} leads={filtered} onNavigate={setPreviewModal} onStatusChange={(id, status) => { handleStatusChange(id, status); setPreviewModal(p => p && p.id === id ? { ...p, status } : p); }} />}
+      {previewModal && <PreviewModal lead={previewModal} onClose={() => setPreviewModal(null)} onEdit={(lead) => { setPreviewModal(null); setEditModal(lead); }} leads={filtered} onNavigate={setPreviewModal} onStatusChange={(id, status) => { handleStatusChange(id, status); setPreviewModal(p => p && p.id === id ? { ...p, status } : p); }} onSaveNotes={saveUserNotes} />}
       {editModal && <EditModal lead={editModal} onClose={() => setEditModal(null)} onSave={save} onDelete={del} />}
       {dateModal && <DateTimeModal
         title={`Set ${modalStatus.label} Date`}
