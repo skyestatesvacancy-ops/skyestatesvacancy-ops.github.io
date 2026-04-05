@@ -1227,6 +1227,22 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
           {lead.offerAmount && <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 700 }}>{'\uD83D\uDCB0'} Offer: {'\u20AC'}{Number(lead.offerAmount).toLocaleString()}</p>}
           {lead.posDate && <p className="lead-card-detail" style={{ color: "#d97706" }}>{'\uD83D\uDCDD'} POS: {lead.posDate}</p>}
           {lead.contractDate && <p className="lead-card-detail" style={{ color: "#dc2626" }}>{'\u270D\uFE0F'} Contract: {lead.contractDate}</p>}
+          {/* Status dropdown */}
+          <div style={{ marginTop: 8 }}>
+            <select className="status-select" value={lead.status}
+              onChange={e => { e.stopPropagation(); onStatusChange(lead.id, e.target.value); }}
+              onClick={e => e.stopPropagation()}
+              style={{ color: s.color, borderColor: s.border, background: s.bg, fontWeight: 600 }}>
+              {lead.status === "selling"
+                ? <>
+                    <option value="selling">{'\uD83C\uDFF7\uFE0F'} Selling</option>
+                    <option value="pos">{'\uD83D\uDCDD'} POS</option>
+                    <option value="contract">{'\u270D\uFE0F'} Contract</option>
+                  </>
+                : STATUSES.filter(st => st.key !== "selling").map(st => <option key={st.key} value={st.key}>{st.label}</option>)
+              }
+            </select>
+          </div>
         </div>
       </div>
     </div>
