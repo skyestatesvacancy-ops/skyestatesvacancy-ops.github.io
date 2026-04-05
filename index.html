@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <title>PropertyOro — Lead Tracker</title>
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#1a1a2e" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="PropertyOro" />
+<link rel="apple-touch-icon" href="/icons/icon-192.png" />
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -138,12 +144,14 @@
     padding: 1.25rem 1.5rem; transition: all 0.25s; position: relative; overflow: hidden;
   }
   .lead-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.06); border-color: #e2e8f0; }
-  .lead-card-accent { position: absolute; top: 0; left: 0; bottom: 0; width: 4px; }
+  .lead-card:active { transform: scale(0.98); }
+  .lead-card-accent { position: absolute; top: 0; left: 0; bottom: 0; width: 5px; border-radius: 16px 0 0 16px; }
   .lead-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
   .lead-card-body { flex: 1; min-width: 0; }
-  .lead-card-price { font-weight: 800; font-size: 20px; color: #ef4444; margin-right: 12px; }
-  .lead-card-location { font-size: 15px; color: #1a1a2e; font-weight: 600; }
-  .lead-card-desc { font-size: 14px; color: #475569; margin-top: 8px; line-height: 1.6; word-break: break-word; }
+  .lead-card-price { font-weight: 800; font-size: 22px; color: #16a34a; margin-right: 12px; letter-spacing: -0.5px; }
+  .lead-card-location { font-size: 15px; color: #1a1a2e; font-weight: 700; }
+  .lead-card-desc { font-size: 14px; color: #475569; margin-top: 8px; line-height: 1.6; word-break: break-word;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .lead-card-link {
     font-size: 13px; color: #6366f1; text-decoration: none; display: inline-block;
     margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
@@ -151,9 +159,15 @@
   .lead-card-link:hover { text-decoration: underline; }
   .lead-card-meta { font-size: 14px; color: #1a1a2e; margin-top: 8px; font-weight: 500; }
   .lead-card-detail { font-size: 13px; margin-top: 4px; font-weight: 500; }
-  .lead-card-notes { font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.5; font-style: italic; }
+  .lead-card-notes { font-size: 12px; color: #94a3b8; margin-top: 6px; line-height: 1.4; font-style: italic;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
   .lead-card-date { font-size: 12px; color: #94a3b8; font-weight: 500; }
   .lead-card-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0; }
+  .lead-card-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .lead-card-chip {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+    background: #f1f5f9; color: #475569; white-space: nowrap;
+  }
 
   /* Status badge */
   .status-badge {
@@ -1161,6 +1175,18 @@ function EditModal({ lead, onClose, onSave, onDelete }) {
 
 function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggleSelect }) {
   const s = STATUS_MAP[lead.status] || STATUS_MAP.waiting;
+  // Extract feature chips from notes (e.g. "Bedrooms: 3 | Features: airspace, UCA")
+  const chips = [];
+  if (lead.notes) {
+    const bedMatch = lead.notes.match(/Bedrooms?:\s*(\d+)/i);
+    if (bedMatch) chips.push(bedMatch[1] + " Bed");
+    const bathMatch = lead.notes.match(/Bathrooms?:\s*(\d+)/i);
+    if (bathMatch) chips.push(bathMatch[1] + " Bath");
+    const featMatch = lead.notes.match(/Features?:\s*(.+?)(?:\||$)/i);
+    if (featMatch) featMatch[1].split(",").forEach(f => { const t = f.trim(); if (t && t.length < 20) chips.push(t); });
+  }
+  const phone = lead.ownerPhone || lead.phone || "";
+
   return (
     <div className="lead-card" onClick={() => selectable ? onToggleSelect(lead.id) : onEdit(lead)} style={{ cursor: "pointer", outline: selected ? "2px solid #e53e3e" : "none", outlineOffset: "2px" }}>
       <div className="lead-card-accent" style={{ background: s.gradient }}></div>
@@ -1171,71 +1197,41 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
       )}
       <div className="lead-card-top">
         <div className="lead-card-body" style={{ paddingLeft: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
-            {lead.price && <span className="lead-card-price">{'\u20AC'}{Number(lead.price).toLocaleString() || lead.price}</span>}
+          {/* Row 1: Price + Location + Date */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 2, flexWrap: "wrap" }}>
+            {lead.price && <span className="lead-card-price">{'\u20AC'}{Number(lead.price).toLocaleString()}</span>}
             {lead.location && <span className="lead-card-location">{lead.location}</span>}
             <span className="lead-card-date" style={{ marginLeft: "auto" }}>{lead.dateFound}</span>
           </div>
+          {/* Row 2: Description (2 lines max) */}
           {lead.description && <p className="lead-card-desc">{lead.description}</p>}
-          {lead.link && (
-            <a href={lead.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="lead-card-link">
-              {lead.link}
-            </a>
+          {/* Row 3: Feature chips */}
+          {chips.length > 0 && (
+            <div className="lead-card-chips">
+              {chips.map((c, i) => <span key={i} className="lead-card-chip">{c}</span>)}
+            </div>
           )}
-          {(lead.ownerName || lead.ownerPhone) && (
+          {/* Row 4: Owner + Phone */}
+          {(lead.ownerName || phone) && (
             <p className="lead-card-meta">
-              {lead.ownerName}{lead.ownerPhone && (
-                <>
-                  {" \u00B7 "}
-                  <a href={`tel:${lead.ownerPhone.replace(/\s/g, "")}`} onClick={e => e.stopPropagation()} style={{ color: "#059669", textDecoration: "underline", cursor: "pointer" }}>
-                    📞 {lead.ownerPhone}
-                  </a>
-                </>
+              {lead.ownerName && <span>{lead.ownerName}</span>}
+              {phone && (
+                <a href={`tel:${phone.replace(/\s/g, "")}`} onClick={e => e.stopPropagation()} style={{ color: "#059669", textDecoration: "none", marginLeft: lead.ownerName ? 8 : 0 }}>
+                  {'\uD83D\uDCDE'} {phone}
+                </a>
               )}
             </p>
           )}
-          {(lead.viewingDate || lead.appointmentDate) && (
-            <p className="lead-card-detail" style={{ color: "#7c3aed" }}>
-              👀 Viewing: {lead.viewingDate || lead.appointmentDate}{(lead.viewingTime || lead.appointmentTime) ? ` at ${lead.viewingTime || lead.appointmentTime}` : ""}{lead.viewingAddress ? ` — ${lead.viewingAddress}` : ""}
-              {" "}<a href={`https://calendar.google.com/calendar/u/0/r/eventedit?text=${encodeURIComponent("Viewing - " + (lead.location || "Property"))}&dates=${(lead.viewingDate || lead.appointmentDate || "").replace(/-/g, "")}T${(lead.viewingTime || lead.appointmentTime || "14:00").replace(":", "")}00/${(lead.viewingDate || lead.appointmentDate || "").replace(/-/g, "")}T${String(parseInt((lead.viewingTime || lead.appointmentTime || "14:00").split(":")[0]) + 1).padStart(2, "0")}${(lead.viewingTime || lead.appointmentTime || "14:00").split(":")[1]}00&details=${encodeURIComponent(lead.description || "")}&location=${encodeURIComponent(lead.viewingAddress || lead.location || "")}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "12px" }}>📅</a>
-            </p>
-          )}
-          {lead.posDate && (
-            <p className="lead-card-detail" style={{ color: "#d97706" }}>
-              📝 POS: {lead.posDate}{lead.posTime ? ` at ${lead.posTime}` : ""}{lead.posNotaryName ? ` — ${lead.posNotaryName}` : ""}{lead.posAddress ? ` @ ${lead.posAddress}` : ""}
-              {" "}<a href={`https://calendar.google.com/calendar/u/0/r/eventedit?text=${encodeURIComponent("POS - " + (lead.location || "Property"))}&dates=${(lead.posDate || "").replace(/-/g, "")}T${(lead.posTime || "14:00").replace(":", "")}00/${(lead.posDate || "").replace(/-/g, "")}T${String(parseInt((lead.posTime || "14:00").split(":")[0]) + 1).padStart(2, "0")}${(lead.posTime || "14:00").split(":")[1]}00&details=${encodeURIComponent("Notary: " + (lead.posNotaryName || "TBD") + "\n" + (lead.description || ""))}&location=${encodeURIComponent(lead.posAddress || "")}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "12px" }}>📅</a>
-            </p>
-          )}
-          {lead.contractDate && (
-            <p className="lead-card-detail" style={{ color: "#dc2626" }}>
-              ✍️ Contract: {lead.contractDate}{lead.contractTime ? ` at ${lead.contractTime}` : ""}{lead.contractNotaryName ? ` — ${lead.contractNotaryName}` : ""}{lead.contractAddress ? ` @ ${lead.contractAddress}` : ""}
-              {" "}<a href={`https://calendar.google.com/calendar/u/0/r/eventedit?text=${encodeURIComponent("Contract - " + (lead.location || "Property"))}&dates=${(lead.contractDate || "").replace(/-/g, "")}T${(lead.contractTime || "14:00").replace(":", "")}00/${(lead.contractDate || "").replace(/-/g, "")}T${String(parseInt((lead.contractTime || "14:00").split(":")[0]) + 1).padStart(2, "0")}${(lead.contractTime || "14:00").split(":")[1]}00&details=${encodeURIComponent("Notary: " + (lead.contractNotaryName || "TBD") + "\n" + (lead.description || ""))}&location=${encodeURIComponent(lead.contractAddress || "")}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "12px" }}>📅</a>
-            </p>
-          )}
-          {lead.offerAmount && (
-            <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 700 }}>
-              💰 Offer: {'\u20AC'}{Number(lead.offerAmount).toLocaleString() || lead.offerAmount}
-            </p>
-          )}
-          {lead.offerDetails && <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 400 }}>{lead.offerDetails}</p>}
-          {lead.notes && <p className="lead-card-notes">{lead.notes}</p>}
+          {/* Row 5: Active stage indicator */}
+          {(lead.viewingDate || lead.appointmentDate) && <p className="lead-card-detail" style={{ color: "#7c3aed" }}>{'\uD83D\uDC40'} Viewing: {lead.viewingDate || lead.appointmentDate}</p>}
+          {lead.offerAmount && <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 700 }}>{'\uD83D\uDCB0'} Offer: {'\u20AC'}{Number(lead.offerAmount).toLocaleString()}</p>}
+          {lead.posDate && <p className="lead-card-detail" style={{ color: "#d97706" }}>{'\uD83D\uDCDD'} POS: {lead.posDate}</p>}
+          {lead.contractDate && <p className="lead-card-detail" style={{ color: "#dc2626" }}>{'\u270D\uFE0F'} Contract: {lead.contractDate}</p>}
         </div>
         <div className="lead-card-actions">
-          <select className="status-select" value={lead.status}
-            onChange={e => { e.stopPropagation(); onStatusChange(lead.id, e.target.value); }}
-            style={{ color: s.color, borderColor: s.color, background: s.bg }}>
-            {lead.status === "selling"
-              ? <>
-                  <option value="selling">🏷️ Selling</option>
-                  <option value="pos">📝 POS</option>
-                  <option value="contract">✍️ Contract</option>
-                </>
-              : STATUSES.filter(st => st.key !== "selling").map(st => <option key={st.key} value={st.key}>{st.label}</option>)
-            }
-          </select>
-          <button className="btn-edit" onClick={e => { e.stopPropagation(); onEdit(lead); }}>
-            Edit
-          </button>
+          <span className="status-badge" style={{ background: s.bg, color: s.color, border: "1px solid " + s.border, cursor: "default" }}>
+            {s.icon}
+          </span>
         </div>
       </div>
     </div>
@@ -1529,6 +1525,11 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
