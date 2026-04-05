@@ -405,6 +405,15 @@ const STATUSES = [
 ];
 const STATUS_MAP = Object.fromEntries(STATUSES.map(s => [s.key, s]));
 
+function cleanLocation(loc) {
+  if (!loc) return "";
+  return loc
+    .replace(/,?\s*Reġjun\s+(tal-|tat-|tan-|tal |tat |tan )?\S+/gi, "")
+    .replace(/,?\s*Malta$/i, "")
+    .trim()
+    .replace(/,\s*$/, "");
+}
+
 const EMPTY_FORM = {
   link: "", price: "", location: "", description: "",
   ownerName: "", ownerPhone: "",
@@ -464,7 +473,7 @@ function MarketPricing() {
 
   function normalizeLocation(raw) {
     if (!raw) return null;
-    let loc = raw.trim().replace(/,\s*(Malta|Reġjun.*)$/i, "").trim().replace(/:$/, "");
+    let loc = raw.trim().replace(/,?\s*Reġjun\s+(tal-|tat-|tan-|tal |tat |tan )?\S+/gi, "").replace(/,?\s*Malta$/i, "").trim().replace(/:$/, "");
     const map = {
       "st julians": "St Julians", "st julian's": "St Julians", "san giljan": "St Julians",
       "sliema": "Sliema", "gzira": "Gzira", "msida": "Msida", "birkirkara": "Birkirkara",
@@ -850,9 +859,6 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate }) {
   return React.createElement("div", { className: "overlay", onTouchStart, onTouchEnd },
     React.createElement("div", { className: "modal", style: { maxHeight: "90vh", overflow: "auto", position: "relative", display: "flex", flexDirection: "column" } },
 
-      // Nav arrows
-      hasPrev && React.createElement("button", { className: "preview-nav left", onClick: (e) => { e.stopPropagation(); goPrev(); } }, "\u2039"),
-      hasNext && React.createElement("button", { className: "preview-nav right", onClick: (e) => { e.stopPropagation(); goNext(); } }, "\u203A"),
 
       // Header
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
@@ -872,7 +878,7 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate }) {
       // Price + Location
       React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, padding: "14px 16px", background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)", borderRadius: 12, border: "1px solid #bbf7d0" } },
         React.createElement("div", { style: { fontSize: 26, fontWeight: 800, color: "#16a34a" } }, price),
-        React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: "#374151" } }, lead.location || ""),
+        React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: "#374151" } }, cleanLocation(lead.location)),
       ),
 
       // Timeline
@@ -1200,7 +1206,7 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
           {/* Row 1: Price + Location + Date */}
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 2, flexWrap: "wrap" }}>
             {lead.price && <span className="lead-card-price">{'\u20AC'}{Number(lead.price).toLocaleString()}</span>}
-            {lead.location && <span className="lead-card-location">{lead.location}</span>}
+            {lead.location && <span className="lead-card-location">{cleanLocation(lead.location)}</span>}
             <span className="lead-card-date" style={{ marginLeft: "auto" }}>{lead.dateFound}</span>
           </div>
           {/* Row 2: Description (2 lines max) */}
