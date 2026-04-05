@@ -918,9 +918,15 @@ function ChatPanel({ link }) {
     setSending(false);
   };
 
+  // Always show debug status
+  const debugBox = debug ? React.createElement("div", {
+    style: { padding: 8, margin: "8px 0", background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 8, fontSize: 11, color: "#92400e", wordBreak: "break-all" }
+  }, "DEBUG: " + debug + " | messages=" + (messages === null ? "null" : messages.length) + " | loading=" + loading) : null;
+
   // Not loaded yet — show button
   if (messages === null && !loading) {
     return React.createElement("div", { style: { marginBottom: 12 } },
+      debugBox,
       React.createElement("button", {
         onClick: loadChat,
         style: { width: "100%", padding: "10px 16px", borderRadius: 10, border: "1px solid #3b82f6", background: "#eff6ff", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#3b82f6", fontFamily: "inherit" }
@@ -940,6 +946,7 @@ function ChatPanel({ link }) {
 
   // Chat view
   return React.createElement("div", { style: { marginBottom: 12, border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" } },
+    debugBox,
     // Header
     React.createElement("div", { style: { padding: "8px 12px", background: "#f9fafb", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" } },
       React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: "#374151" } }, "\uD83D\uDCAC Chat (" + messages.length + " messages)"),
