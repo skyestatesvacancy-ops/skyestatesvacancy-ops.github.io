@@ -489,7 +489,9 @@ async function dbInsert(lead) {
 }
 async function dbUpdate(lead) {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${lead.id}`, { method: "PATCH", headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(lead) });
+    // Strip client-side parsed fields that don't exist in Supabase
+    const { userNotes, detailNotes, ...cleanLead } = lead;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${lead.id}`, { method: "PATCH", headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(cleanLead) });
     if (!res.ok) console.error("Update failed:", res.status, res.statusText);
   } catch (e) { console.error("Update error:", e.message); }
 }
