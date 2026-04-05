@@ -857,6 +857,26 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate }) {
     return () => window.removeEventListener("keydown", handler);
   });
 
+  // Extract property type + key features from notes + description
+  const allText = ((lead.notes || "") + " " + (lead.description || "")).toLowerCase();
+  const typePatterns = [
+    [/terraced\s*house/, "Terraced House"], [/maisonette/, "Maisonette"], [/townhouse|town\s*house/, "Townhouse"],
+    [/penthouse/, "Penthouse"], [/apartment|flat/, "Apartment"], [/villa/, "Villa"], [/bungalow/, "Bungalow"],
+    [/farmhouse/, "Farmhouse"], [/house of character/, "House of Character"], [/palazzo/, "Palazzo"],
+    [/duplex/, "Duplex"],
+  ];
+  let propType = "";
+  for (const [pat, label] of typePatterns) { if (pat.test(allText)) { propType = label; break; } }
+  const keyFeatures = [];
+  if (/airspace/.test(allText)) keyFeatures.push("Airspace");
+  if (/\buca\b/.test(allText)) keyFeatures.push("UCA");
+  if (/full\s*(?:roof|ownership)/.test(allText)) keyFeatures.push("Full Roof");
+  if (/garage/.test(allText)) keyFeatures.push("Garage");
+  if (/freehold/.test(allText)) keyFeatures.push("Freehold");
+  if (/pool/.test(allText)) keyFeatures.push("Pool");
+  if (/permits?/.test(allText)) keyFeatures.push("Permits");
+  const tagLine = [propType, ...keyFeatures].filter(Boolean).join(" + ");
+
   // Timeline stages
   const stages = [
     { key: "waiting", label: "Found", icon: "🔍", color: "#3b82f6" },
@@ -894,9 +914,12 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate }) {
       ),
 
       // Price + Location
-      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12, padding: "14px 16px", background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)", borderRadius: 12, border: "1px solid #bbf7d0" } },
-        React.createElement("div", { style: { fontSize: 26, fontWeight: 800, color: "#16a34a" } }, price),
-        React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: "#374151" } }, cleanLocation(lead.location)),
+      React.createElement("div", { style: { marginBottom: 12, padding: "14px 16px", background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)", borderRadius: 12, border: "1px solid #bbf7d0" } },
+        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline" } },
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 800, color: "#16a34a" } }, price),
+          React.createElement("div", { style: { fontSize: 16, fontWeight: 600, color: "#374151" } }, cleanLocation(lead.location)),
+        ),
+        tagLine && React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: "#6366f1", marginTop: 6 } }, tagLine),
       ),
 
 
