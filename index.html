@@ -1516,6 +1516,16 @@ function App() {
         <div className="mobile-home-tile-arrow">{'\u203A'}</div>
       </div>
 
+      {/* Market Pricing */}
+      <div className="mobile-home-tile" style={{ marginTop: 8 }} onClick={() => { setPage("market"); setMobileView("market"); }}>
+        <div className="mobile-home-tile-icon" style={{ background: "#eef2ff" }}>{"\uD83D\uDCCA"}</div>
+        <div className="mobile-home-tile-info">
+          <div className="mobile-home-tile-label">Market Pricing</div>
+          <div className="mobile-home-tile-count">Sales price analysis</div>
+        </div>
+        <div className="mobile-home-tile-arrow">{'\u203A'}</div>
+      </div>
+
       {/* Dark mode toggle */}
       <div className="mobile-home-tile" style={{ marginTop: 8 }} onClick={() => setDark(d => !d)}>
         <div className="mobile-home-tile-icon" style={{ background: dark ? "#fef3c7" : "#1e1e2e" }}>{dark ? "\u2600\uFE0F" : "\uD83C\uDF19"}</div>
@@ -1649,7 +1659,11 @@ function App() {
       {page === "market"
         ? React.createElement(MarketPricing)
         : isMobile
-          ? (mobileView === "home" ? mobileHome : mobileListView)
+          ? (mobileView === "market"
+            ? React.createElement("div", { className: "main" },
+                React.createElement("button", { className: "mobile-back", onClick: backToHome }, "\u2190 Back"),
+                React.createElement(MarketPricing))
+            : mobileView === "home" ? mobileHome : mobileListView)
           : desktopView
       }
 
