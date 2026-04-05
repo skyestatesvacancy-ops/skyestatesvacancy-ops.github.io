@@ -1392,6 +1392,7 @@ function App() {
   const [dark, setDark]             = useState(() => localStorage.getItem("darkMode") === "true");
   const [mobileView, setMobileView] = useState("home"); // "home" or status key
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectMode, setSelectMode] = useState(false);
   const isMobile = window.innerWidth <= 900;
 
   React.useEffect(() => {
@@ -1429,7 +1430,7 @@ function App() {
 
   const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const selectAll = (ids) => setSelectedIds(ids);
-  const clearSelection = () => setSelectedIds([]);
+  const clearSelection = () => { setSelectedIds([]); setSelectMode(false); };
 
   const handleStatusChange = async (id, newStatus) => {
     // For viewing/pos/contract, open date modal (automatic status set in saveDateModal)
@@ -1574,9 +1575,9 @@ function App() {
 
       {mobileView === "dead" && filtered.length > 0 && (
         <div style={{ display: "flex", gap: 8, padding: "0 0 10px 0", alignItems: "center" }}>
-          <button onClick={() => selectAll(filtered.map(l => l.id))} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Select All</button>
-          {selectedIds.length > 0 && <button onClick={() => clearSelection()} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Clear</button>}
-          {selectedIds.length > 0 && <button onClick={delSelected} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: "none", background: "#e53e3e", color: "#fff", cursor: "pointer", fontWeight: 700 }}>🗑 Delete {selectedIds.length}</button>}
+          <button onClick={() => { setSelectMode(m => !m); if (selectMode) clearSelection(); }} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: selectMode ? "1px solid #e53e3e" : "1px solid #d1d5db", background: selectMode ? "#fef2f2" : "#f3f4f6", color: selectMode ? "#e53e3e" : "#374151", cursor: "pointer", fontWeight: 600 }}>{selectMode ? "Cancel" : "Select"}</button>
+          {selectMode && <button onClick={() => selectAll(filtered.map(l => l.id))} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Select All</button>}
+          {selectedIds.length > 0 && <button onClick={delSelected} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: "none", background: "#e53e3e", color: "#fff", cursor: "pointer", fontWeight: 700 }}>{'\uD83D\uDDD1'} Delete {selectedIds.length}</button>}
         </div>
       )}
       {filtered.length === 0 ? (
@@ -1587,7 +1588,7 @@ function App() {
       ) : (
         <div className="lead-list">
           {filtered.map(l => <LeadCard key={l.id} lead={l} onEdit={setPreviewModal} onStatusChange={handleStatusChange}
-            selectable={mobileView === "dead"} selected={selectedIds.includes(l.id)} onToggleSelect={toggleSelect} />)}
+            selectable={selectMode} selected={selectedIds.includes(l.id)} onToggleSelect={toggleSelect} />)}
         </div>
       )}
     </div>
@@ -1638,9 +1639,9 @@ function App() {
 
       {filter === "dead" && filtered.length > 0 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
-          <button onClick={() => selectAll(filtered.map(l => l.id))} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Select All</button>
-          {selectedIds.length > 0 && <button onClick={() => clearSelection()} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Clear</button>}
-          {selectedIds.length > 0 && <button onClick={delSelected} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: "none", background: "#e53e3e", color: "#fff", cursor: "pointer", fontWeight: 700 }}>🗑 Delete {selectedIds.length}</button>}
+          <button onClick={() => { setSelectMode(m => !m); if (selectMode) clearSelection(); }} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: selectMode ? "1px solid #e53e3e" : "1px solid #d1d5db", background: selectMode ? "#fef2f2" : "#f3f4f6", color: selectMode ? "#e53e3e" : "#374151", cursor: "pointer", fontWeight: 600 }}>{selectMode ? "Cancel" : "Select"}</button>
+          {selectMode && <button onClick={() => selectAll(filtered.map(l => l.id))} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 8, border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Select All</button>}
+          {selectedIds.length > 0 && <button onClick={delSelected} style={{ fontSize: 12, padding: "4px 12px", borderRadius: 8, border: "none", background: "#e53e3e", color: "#fff", cursor: "pointer", fontWeight: 700 }}>{'\uD83D\uDDD1'} Delete {selectedIds.length}</button>}
         </div>
       )}
       {filtered.length === 0 ? (
@@ -1652,7 +1653,7 @@ function App() {
       ) : (
         <div className="lead-list">
           {filtered.map(l => <LeadCard key={l.id} lead={l} onEdit={setPreviewModal} onStatusChange={handleStatusChange}
-            selectable={filter === "dead"} selected={selectedIds.includes(l.id)} onToggleSelect={toggleSelect} />)}
+            selectable={selectMode} selected={selectedIds.includes(l.id)} onToggleSelect={toggleSelect} />)}
         </div>
       )}
     </div>
