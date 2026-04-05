@@ -973,8 +973,8 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
       ),
 
 
-      // Status dropdown + shortcuts
-      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" } },
+      // Status dropdown
+      React.createElement("div", { style: { marginBottom: 12 } },
         React.createElement("select", {
           value: lead.status,
           onChange: (e) => { onStatusChange(lead.id, e.target.value); },
@@ -990,26 +990,30 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
                 React.createElement("option", { key: st.key, value: st.key }, st.label)
               )
         ),
-        lead.status !== "potential" && React.createElement("button", {
-          onClick: () => { onStatusChange(lead.id, "potential"); },
-          style: { padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#7c3aed", cursor: "pointer", fontFamily: "inherit" }
-        }, "\u2B50 Potential"),
-        lead.status !== "dead" && React.createElement("button", {
-          onClick: () => { onStatusChange(lead.id, "dead"); },
-          style: { padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1px solid #d1d5db", background: "#f3f4f6", color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }
-        }, "\uD83D\uDC80 Dead"),
-      ),
-
-      // Property link
-      lead.link && React.createElement("div", { style: { marginBottom: 10 } },
-        React.createElement("a", { href: lead.link, target: "_blank", rel: "noreferrer", style: { color: "#6366f1", fontSize: 13, textDecoration: "underline", wordBreak: "break-all" } },
-          "\uD83D\uDD17 " + lead.link)
       ),
 
       // Description
       lead.description && React.createElement("div", { style: { marginBottom: 14 } },
         React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 4 } }, "Description"),
         React.createElement("div", { style: { fontSize: 14, color: "#374151", lineHeight: 1.6, whiteSpace: "pre-wrap", background: "#f9fafb", padding: 14, borderRadius: 10, border: "1px solid #f1f1f4", maxHeight: 250, overflow: "auto" } }, lead.description)
+      ),
+
+      // FB link
+      lead.link && React.createElement("div", { style: { marginBottom: 12 } },
+        React.createElement("a", { href: lead.link, target: "_blank", rel: "noreferrer", style: { color: "#6366f1", fontSize: 13, textDecoration: "underline", wordBreak: "break-all" } },
+          "\uD83D\uDD17 " + lead.link)
+      ),
+
+      // Dead (left) + Potential (right) shortcut buttons
+      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 14 } },
+        lead.status !== "dead" && React.createElement("button", {
+          onClick: () => { onStatusChange(lead.id, "dead"); },
+          style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #d1d5db", background: "#f3f4f6", color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }
+        }, "\uD83D\uDC80 Dead Lead"),
+        lead.status !== "potential" && React.createElement("button", {
+          onClick: () => { onStatusChange(lead.id, "potential"); },
+          style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#7c3aed", cursor: "pointer", fontFamily: "inherit" }
+        }, "\u2B50 Potential"),
       ),
 
       // Details
