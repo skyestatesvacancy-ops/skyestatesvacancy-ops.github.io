@@ -806,7 +806,7 @@ function OfferModal({ lead, onClose, onSave }) {
   );
 }
 
-function PreviewModal({ lead, onClose, onEdit, leads, onNavigate }) {
+function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange }) {
   const s = STATUS_MAP[lead.status] || STATUS_MAP.waiting;
   const price = lead.price ? "\u20AC" + Number(lead.price).toLocaleString() : "Price unknown";
   const phone = lead.ownerPhone || lead.phone || "";
@@ -923,10 +923,31 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate }) {
       ),
 
 
-      // Status badge
-      React.createElement("div", { style: { marginBottom: 12 } },
-        React.createElement("span", { style: { display: "inline-block", padding: "5px 16px", borderRadius: 20, fontSize: 13, fontWeight: 700, background: s.bg, color: s.color, border: "1px solid " + s.border } },
-          s.icon + " " + s.label)
+      // Status dropdown + shortcuts
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" } },
+        React.createElement("select", {
+          value: lead.status,
+          onChange: (e) => { onStatusChange(lead.id, e.target.value); },
+          style: { padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 700, background: s.bg, color: s.color, border: "1px solid " + s.border, cursor: "pointer", fontFamily: "inherit" }
+        },
+          lead.status === "selling"
+            ? [
+                React.createElement("option", { key: "selling", value: "selling" }, "\uD83C\uDFF7\uFE0F Selling"),
+                React.createElement("option", { key: "pos", value: "pos" }, "\uD83D\uDCDD POS"),
+                React.createElement("option", { key: "contract", value: "contract" }, "\u270D\uFE0F Contract"),
+              ]
+            : STATUSES.filter(st => st.key !== "selling").map(st =>
+                React.createElement("option", { key: st.key, value: st.key }, st.label)
+              )
+        ),
+        lead.status !== "potential" && React.createElement("button", {
+          onClick: () => { onStatusChange(lead.id, "potential"); },
+          style: { padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#7c3aed", cursor: "pointer", fontFamily: "inherit" }
+        }, "\u2B50 Potential"),
+        lead.status !== "dead" && React.createElement("button", {
+          onClick: () => { onStatusChange(lead.id, "dead"); },
+          style: { padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1px solid #d1d5db", background: "#f3f4f6", color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }
+        }, "\uD83D\uDC80 Dead"),
       ),
 
       // Property link
@@ -1541,7 +1562,7 @@ function App() {
           : desktopView
       }
 
-      {previewModal && <PreviewModal lead={previewModal} onClose={() => setPreviewModal(null)} onEdit={(lead) => { setPreviewModal(null); setEditModal(lead); }} leads={filtered} onNavigate={setPreviewModal} />}
+      {previewModal && <PreviewModal lead={previewModal} onClose={() => setPreviewModal(null)} onEdit={(lead) => { setPreviewModal(null); setEditModal(lead); }} leads={filtered} onNavigate={setPreviewModal} onStatusChange={(id, status) => { handleStatusChange(id, status); setPreviewModal(p => p && p.id === id ? { ...p, status } : p); }} />}
       {editModal && <EditModal lead={editModal} onClose={() => setEditModal(null)} onSave={save} onDelete={del} />}
       {dateModal && <DateTimeModal
         title={`Set ${modalStatus.label} Date`}
