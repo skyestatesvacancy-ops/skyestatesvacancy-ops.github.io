@@ -871,7 +871,7 @@ function ChatPanel({ link }) {
   const [reply, setReply] = useState("");
   const [error, setError] = useState("");
 
-  const tunnelUrl = localStorage.getItem("tunnelUrl") || "";
+  const tunnelUrl = localStorage.getItem("tunnelUrl") || "https://stockholm-shopping-alerts-clubs.trycloudflare.com";
 
   const loadChat = async () => {
     if (!tunnelUrl) { setError("Set tunnel URL in Settings first"); return; }
