@@ -877,11 +877,17 @@ function ChatPanel({ link }) {
     if (!tunnelUrl) { setError("Set tunnel URL in Settings first"); return; }
     setLoading(true); setError("");
     try {
-      const r = await fetch(tunnelUrl + "/api/chat?link=" + encodeURIComponent(link), { timeout: 35000 });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 60000);
+      const r = await fetch(tunnelUrl + "/api/chat?link=" + encodeURIComponent(link), { signal: controller.signal });
+      clearTimeout(timer);
       const data = await r.json();
-      if (data.error) { setError(data.error); }
-      else { setMessages(data.messages || []); }
-    } catch (e) { setError("Failed to connect: " + e.message); }
+      if (data.error && data.error !== null) { setError(data.error); }
+      setMessages(data.messages || []);
+    } catch (e) {
+      if (e.name === "AbortError") { setError("Timeout — took too long. Try again."); }
+      else { setError("Failed to connect: " + (e.message || "unknown error")); }
+    }
     setLoading(false);
   };
 
