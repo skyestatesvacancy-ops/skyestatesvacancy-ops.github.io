@@ -504,7 +504,7 @@ async function dbDelete(id) {
 //  MARKET PRICING COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
 
-function MarketPricing() {
+function MarketPricing({ onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("location");
@@ -675,7 +675,13 @@ function MarketPricing() {
         React.createElement("p", { className: "page-title" }, "Market Pricing"),
         React.createElement("p", { className: "page-subtitle" }, data.insights.totalListings + " sales listings analyzed")
       ),
-      React.createElement("button", { className: "btn-primary", onClick: fetchMarketData }, "Refresh")
+      React.createElement("div", { style: { display: "flex", gap: 8 } },
+        React.createElement("button", { className: "btn-primary", onClick: fetchMarketData }, "Refresh"),
+        onClose && React.createElement("button", {
+          onClick: onClose,
+          style: { background: "none", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 20, cursor: "pointer", padding: "0 12px", color: "#9ca3af" }
+        }, "\u00D7")
+      )
     ),
     // Tabs
     React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, overflowX: "auto" } },
@@ -1657,12 +1663,12 @@ function App() {
       <Sidebar counts={counts} totalLeads={leads.length} filter={filter} onFilterChange={f => { setPage("leads"); setFilter(f); }} page={page} onPageChange={setPage} dark={dark} onToggleDark={() => setDark(d => !d)} />
 
       {page === "market"
-        ? React.createElement(MarketPricing)
+        ? React.createElement(MarketPricing, { onClose: () => setPage("leads") })
         : isMobile
           ? (mobileView === "market"
             ? React.createElement("div", { className: "main" },
                 React.createElement("button", { className: "mobile-back", onClick: backToHome }, "\u2190 Back"),
-                React.createElement(MarketPricing))
+                React.createElement(MarketPricing, { onClose: () => { setPage("leads"); setMobileView("home"); } }))
             : mobileView === "home" ? mobileHome : mobileListView)
           : desktopView
       }
