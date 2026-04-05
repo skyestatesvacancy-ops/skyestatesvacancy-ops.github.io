@@ -1062,11 +1062,26 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
       // Dead (left) + Potential (right) shortcut buttons
       React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 14 } },
         lead.status !== "dead" && React.createElement("button", {
-          onClick: () => { onStatusChange(lead.id, "dead"); },
+          onClick: () => {
+            onStatusChange(lead.id, "dead");
+            // Auto-navigate to next lead
+            if (leads && currentIdx >= 0) {
+              const next = leads[currentIdx + 1] || leads[currentIdx - 1];
+              if (next && next.id !== lead.id) { setTimeout(() => onNavigate(next), 300); }
+              else { setTimeout(() => onClose(), 300); }
+            }
+          },
           style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #d1d5db", background: "#f3f4f6", color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }
         }, "\uD83D\uDC80 Dead Lead"),
         lead.status !== "potential" && React.createElement("button", {
-          onClick: () => { onStatusChange(lead.id, "potential"); },
+          onClick: () => {
+            onStatusChange(lead.id, "potential");
+            if (leads && currentIdx >= 0) {
+              const next = leads[currentIdx + 1] || leads[currentIdx - 1];
+              if (next && next.id !== lead.id) { setTimeout(() => onNavigate(next), 300); }
+              else { setTimeout(() => onClose(), 300); }
+            }
+          },
           style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#7c3aed", cursor: "pointer", fontFamily: "inherit" }
         }, "\u2B50 Potential"),
       ),
