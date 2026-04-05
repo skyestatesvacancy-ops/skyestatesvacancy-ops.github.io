@@ -873,20 +873,28 @@ function ChatPanel({ link }) {
 
   const tunnelUrl = localStorage.getItem("tunnelUrl") || "https://stockholm-shopping-alerts-clubs.trycloudflare.com";
 
+  const [debug, setDebug] = useState("");
+
   const loadChat = async () => {
     if (!tunnelUrl) { setError("Set tunnel URL in Settings first"); return; }
-    setLoading(true); setError("");
+    setLoading(true); setError(""); setDebug("Connecting...");
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 60000);
+      setDebug("Fetching from " + tunnelUrl.substring(0, 30) + "...");
       const r = await fetch(tunnelUrl + "/api/chat?link=" + encodeURIComponent(link), { signal: controller.signal });
       clearTimeout(timer);
-      const data = await r.json();
+      setDebug("Got response: " + r.status);
+      const text = await r.text();
+      setDebug("Response: " + text.substring(0, 100));
+      const data = JSON.parse(text);
       if (data.error && data.error !== null) { setError(data.error); }
       setMessages(data.messages || []);
+      setDebug("Messages: " + (data.messages || []).length);
     } catch (e) {
       if (e.name === "AbortError") { setError("Timeout — took too long. Try again."); }
-      else { setError("Failed to connect: " + (e.message || "unknown error")); }
+      else { setError("Failed: " + (e.message || "unknown")); }
+      setDebug("Error: " + e.name + " " + e.message);
     }
     setLoading(false);
   };
@@ -926,6 +934,7 @@ function ChatPanel({ link }) {
     return React.createElement("div", { style: { textAlign: "center", padding: 20, color: "#9ca3af" } },
       React.createElement("div", { style: { fontSize: 14 } }, "Loading conversation..."),
       React.createElement("div", { style: { fontSize: 12, marginTop: 4 } }, "This takes about 10 seconds"),
+      debug && React.createElement("div", { style: { fontSize: 10, marginTop: 8, color: "#6b7280" } }, debug),
     );
   }
 
