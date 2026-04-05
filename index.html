@@ -1551,11 +1551,11 @@ function App() {
       <button className="mobile-back" onClick={backToHome}>{'\u2190'} Back</button>
 
       {activeStatus && (
-        <div className="mobile-status-header">
-          <div className="mobile-status-header-icon">{activeStatus.icon}</div>
+        <div className="mobile-status-header" style={{ background: activeStatus.color, borderRadius: 14, padding: "14px 18px", color: "#fff" }}>
+          <div className="mobile-status-header-icon" style={{ fontSize: 28 }}>{activeStatus.icon}</div>
           <div>
-            <div className="mobile-status-header-label">{activeStatus.label}</div>
-            <div className="mobile-status-header-count">{counts[mobileView] || 0} lead{counts[mobileView] !== 1 ? 's' : ''}</div>
+            <div className="mobile-status-header-label" style={{ color: "#fff", fontWeight: 800, fontSize: 18 }}>{activeStatus.label}</div>
+            <div className="mobile-status-header-count" style={{ color: "rgba(255,255,255,0.8)" }}>{counts[mobileView] || 0} lead{counts[mobileView] !== 1 ? 's' : ''}</div>
           </div>
         </div>
       )}
