@@ -1492,7 +1492,7 @@ function App() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {STATUSES.map(s => (
-          <div key={s.key} className="mobile-home-tile" onClick={() => openMobileStatus(s.key)}>
+          <div key={s.key} className="mobile-home-tile" onClick={() => openMobileStatus(s.key)} style={{ borderColor: s.color, borderWidth: 2, borderStyle: "solid" }}>
             <div className="mobile-home-tile-icon" style={{ background: s.bg }}>{s.icon}</div>
             <div className="mobile-home-tile-info">
               <div className="mobile-home-tile-label">{s.label}</div>
