@@ -1034,7 +1034,7 @@ function PreviewNotes({ lead, onSaveNotes }) {
           )
         )
       : React.createElement("div", { onClick: () => setEditing(true), style: { cursor: "pointer" } },
-          React.createElement("div", { style: { fontSize: 14, color: "#374151", whiteSpace: "pre-wrap", background: "#f9fafb", padding: 12, borderRadius: 10, border: "1px solid #f1f1f4" } }, lead.userNotes),
+          React.createElement("div", { style: { fontSize: 15, color: "#1a1a2e", whiteSpace: "pre-wrap", background: "#fffbeb", padding: 14, borderRadius: 10, border: "1px solid #fde68a", fontWeight: 500, lineHeight: 1.5 } }, lead.userNotes),
           saved && React.createElement("div", { style: { fontSize: 12, color: "#16a34a", marginTop: 4 } }, "\u2713 Saved"),
         )
   );
@@ -1224,6 +1224,9 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
         React.createElement("div", { style: { fontSize: 14, color: "#374151", lineHeight: 1.6, whiteSpace: "pre-wrap", background: "#f9fafb", padding: 14, borderRadius: 10, border: "1px solid #f1f1f4", maxHeight: 250, overflow: "auto" } }, lead.description)
       ),
 
+      // User Notes (editable) — right after description
+      React.createElement(PreviewNotes, { lead, onSaveNotes }),
+
       // FB link
       lead.link && React.createElement("div", { style: { marginBottom: 12 } },
         React.createElement("a", { href: lead.link, target: "_blank", rel: "noreferrer", style: { color: "#6366f1", fontSize: 13, textDecoration: "underline", wordBreak: "break-all" } },
@@ -1318,9 +1321,6 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
 
       // Details (auto-generated from scanner)
       lead.detailNotes && row("Details", lead.detailNotes),
-
-      // User Notes (editable)
-      React.createElement(PreviewNotes, { lead, onSaveNotes }),
 
       // Spacer for action bar
       React.createElement("div", { style: { height: 70 } }),
@@ -1613,6 +1613,7 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
           {/* Row 2: Property type + features tagline */}
           {tagLine && <div style={{ fontSize: 12, fontWeight: 600, color: "#6366f1", marginBottom: 4 }}>{tagLine}</div>}
           {/* Row 2: Description (2 lines max) */}
+          {lead.userNotes && <p style={{ fontSize: 13, color: "#92400e", background: "#fffbeb", padding: "6px 10px", borderRadius: 8, marginTop: 4, fontWeight: 600, border: "1px solid #fde68a" }}>{"\uD83D\uDCDD "}{lead.userNotes}</p>}
           {lead.description && <p className="lead-card-desc">{lead.description}</p>}
           {/* Row 4: Owner + Phone */}
           {(lead.ownerName || phone) && (
