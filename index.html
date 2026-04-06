@@ -1647,10 +1647,10 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
             </p>
           )}
           {/* Row 5: Active stage indicator */}
-          {(lead.viewingDate || lead.appointmentDate) && <p className="lead-card-detail" style={{ color: "#7c3aed" }}>{'\uD83D\uDC40'} Viewing: {lead.viewingDate || lead.appointmentDate} <a href={buildCalendarUrl(lead, "viewing")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
+          {(lead.viewingDate || lead.appointmentDate) && <p className="lead-card-detail" style={{ color: "#7c3aed" }}>{'\uD83D\uDC40'} Viewing: {lead.viewingDate || lead.appointmentDate}{(lead.viewingTime || lead.appointmentTime) ? ' ' + (lead.viewingTime || lead.appointmentTime) : ''} <a href={buildCalendarUrl(lead, "viewing")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
           {lead.offerAmount && <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 700 }}>{'\uD83D\uDCB0'} Offer: {'\u20AC'}{Number(lead.offerAmount).toLocaleString()}</p>}
-          {lead.posDate && <p className="lead-card-detail" style={{ color: "#d97706" }}>{'\uD83D\uDCDD'} POS: {lead.posDate} <a href={buildCalendarUrl(lead, "pos")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
-          {lead.contractDate && <p className="lead-card-detail" style={{ color: "#dc2626" }}>{'\u270D\uFE0F'} Contract: {lead.contractDate} <a href={buildCalendarUrl(lead, "contract")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
+          {lead.posDate && <p className="lead-card-detail" style={{ color: "#d97706" }}>{'\uD83D\uDCDD'} POS: {lead.posDate}{lead.posTime ? ' ' + lead.posTime : ''} <a href={buildCalendarUrl(lead, "pos")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
+          {lead.contractDate && <p className="lead-card-detail" style={{ color: "#dc2626" }}>{'\u270D\uFE0F'} Contract: {lead.contractDate}{lead.contractTime ? ' ' + lead.contractTime : ''} <a href={buildCalendarUrl(lead, "contract")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
           {/* Status dropdown */}
           <div style={{ marginTop: 8 }}>
             <select className="status-select" value={lead.status}
