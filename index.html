@@ -1293,12 +1293,13 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
           },
           style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#7c3aed", cursor: "pointer", fontFamily: "inherit" }
         }, "\u2B50 Potential"),
+      ),
+      React.createElement("div", { style: { marginBottom: 14 } },
         React.createElement("select", {
           value: lead.status,
           onChange: (e) => { onStatusChange(lead.id, e.target.value); },
-          style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontFamily: "inherit" }
+          style: { padding: "5px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, border: "1px solid #d1d5db", background: "#f9fafb", color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }
         },
-          React.createElement("option", { value: "", disabled: true }, "Move to..."),
           STATUSES.filter(function(st) { return st.key !== "selling"; }).map(function(st) {
             return React.createElement("option", { key: st.key, value: st.key }, st.label);
           })
