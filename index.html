@@ -824,6 +824,59 @@ function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChang
   );
 }
 
+function buildCalendarUrl(lead, type) {
+  var date, time, address, notaryName;
+  if (type === "viewing") {
+    date = lead.viewingDate || lead.appointmentDate;
+    time = lead.viewingTime || lead.appointmentTime;
+    address = lead.viewingAddress;
+  } else if (type === "pos") {
+    date = lead.posDate;
+    time = lead.posTime;
+    address = lead.posAddress;
+    notaryName = lead.posNotaryName;
+  } else if (type === "contract") {
+    date = lead.contractDate;
+    time = lead.contractTime;
+    address = lead.contractAddress;
+    notaryName = lead.contractNotaryName;
+  }
+  if (!date) return "#";
+
+  var parts = date.split("-");
+  var tp = (time || "14:00").split(":");
+  var startTime = parts[0] + parts[1] + parts[2] + "T" + tp[0] + tp[1] + "00";
+  var endHour = String(Math.min(parseInt(tp[0]) + 1, 23)).padStart(2, "0");
+  var endTime = parts[0] + parts[1] + parts[2] + "T" + endHour + tp[1] + "00";
+
+  var typeLabel = type === "viewing" ? "Viewing" : type === "pos" ? "POS" : "Contract";
+  var eventTitle = typeLabel + " - " + (lead.location || "Property");
+
+  var details = [];
+  if (lead.price) details.push("Price: " + lead.price);
+  if (lead.location) details.push("Location: " + lead.location);
+  if (lead.ownerName) details.push("Owner: " + lead.ownerName);
+  if (lead.ownerPhone || lead.phone) details.push("Phone: " + (lead.ownerPhone || lead.phone));
+  if (notaryName) details.push("Notary: " + notaryName);
+  if (lead.description) details.push("\nDescription:\n" + lead.description);
+  if (lead.link) details.push("\nListing: " + lead.link);
+  var eventDetails = details.join("\n");
+
+  var eventLocation = address || lead.location || "";
+
+  var params = {
+    text: eventTitle,
+    dates: startTime + "/" + endTime,
+    details: eventDetails,
+    location: eventLocation,
+    ctz: "Europe/Malta"
+  };
+  var queryString = Object.entries(params)
+    .map(function(p) { return encodeURIComponent(p[0]) + "=" + encodeURIComponent(p[1]); })
+    .join("&");
+  return "https://calendar.google.com/calendar/u/0/r/eventedit?" + queryString;
+}
+
 function DateTimeModal({ title, accentColor, dateVal, timeVal, onClose, onSave }) {
   const [date, setDate] = useState(dateVal || "");
   const [time, setTime] = useState(timeVal || "");
@@ -1314,7 +1367,7 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
 
       // Viewing/Offer/POS/Contract info blocks
       (lead.viewingDate || lead.appointmentDate) && React.createElement("div", { style: { marginTop: 10, padding: 12, borderRadius: 10, background: "#f5f3ff", border: "1px solid #c4b5fd" } },
-        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#7c3aed", marginBottom: 4 } }, "\uD83D\uDC40 Viewing"),
+        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#7c3aed", marginBottom: 4, display: "flex", justifyContent: "space-between", alignItems: "center" } }, "\uD83D\uDC40 Viewing", React.createElement("a", { href: buildCalendarUrl(lead, "viewing"), target: "_blank", rel: "noreferrer", style: { textDecoration: "none", fontSize: 16 } }, "\uD83D\uDCC5")),
         React.createElement("div", { style: { fontSize: 14 } }, (lead.viewingDate || lead.appointmentDate || "") + " " + (lead.viewingTime || lead.appointmentTime || "") + (lead.viewingAddress ? " \u2014 " + lead.viewingAddress : ""))
       ),
       lead.offerAmount && React.createElement("div", { style: { marginTop: 10, padding: 12, borderRadius: 10, background: "#ecfdf5", border: "1px solid #a7f3d0" } },
@@ -1322,11 +1375,11 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
         React.createElement("div", { style: { fontSize: 14 } }, "\u20AC" + lead.offerAmount + (lead.offerDetails ? " \u2014 " + lead.offerDetails : ""))
       ),
       lead.posDate && React.createElement("div", { style: { marginTop: 10, padding: 12, borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a" } },
-        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#d97706", marginBottom: 4 } }, "\uD83D\uDCDD POS"),
+        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#d97706", marginBottom: 4, display: "flex", justifyContent: "space-between", alignItems: "center" } }, "\uD83D\uDCDD POS", React.createElement("a", { href: buildCalendarUrl(lead, "pos"), target: "_blank", rel: "noreferrer", style: { textDecoration: "none", fontSize: 16 } }, "\uD83D\uDCC5")),
         React.createElement("div", { style: { fontSize: 14 } }, (lead.posDate || "") + " " + (lead.posTime || "") + (lead.posNotaryName ? " \u2014 Notary: " + lead.posNotaryName : ""))
       ),
       lead.contractDate && React.createElement("div", { style: { marginTop: 10, padding: 12, borderRadius: 10, background: "#fef2f2", border: "1px solid #fecaca" } },
-        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#dc2626", marginBottom: 4 } }, "\u270D\uFE0F Contract"),
+        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#dc2626", marginBottom: 4, display: "flex", justifyContent: "space-between", alignItems: "center" } }, "\u270D\uFE0F Contract", React.createElement("a", { href: buildCalendarUrl(lead, "contract"), target: "_blank", rel: "noreferrer", style: { textDecoration: "none", fontSize: 16 } }, "\uD83D\uDCC5")),
         React.createElement("div", { style: { fontSize: 14 } }, (lead.contractDate || "") + " " + (lead.contractTime || "") + (lead.contractNotaryName ? " \u2014 Notary: " + lead.contractNotaryName : ""))
       ),
 
@@ -1385,51 +1438,7 @@ function EditModal({ lead, onClose, onSave, onDelete }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   // Helper to generate Google Calendar URL with event details
-  const getCalendarUrl = (date, time, type, address, notaryName) => {
-    if (!date) return "#";
-
-    // Parse date and time for the event
-    const [year, month, day] = date.split("-");
-    const [hours, minutes] = time ? time.split(":") : ["14", "00"];
-    const startTime = `${year}${month}${day}T${hours}${minutes}00`;
-    const endTime = `${year}${month}${day}T${String(parseInt(hours) + 1).padStart(2, "0")}${minutes}00`;
-
-    // Build event title and details based on type
-    let eventTitle = "";
-    let eventDetails = "";
-    let eventLocation = "";
-
-    if (type === "viewing") {
-      eventTitle = `Viewing - ${form.location || "Property"}`;
-      eventDetails = `Property Details:\n${form.description || "No details provided"}\n\nAddress: ${address || "To be confirmed"}`;
-      eventLocation = address || form.location || "";
-    } else if (type === "pos") {
-      eventTitle = `POS - ${form.location || "Property"}`;
-      eventDetails = `Property Details:\n${form.description || "No details provided"}\n\nNotary: ${notaryName || "To be confirmed"}\nLocation: ${address || "To be confirmed"}`;
-      eventLocation = address || "";
-    } else if (type === "contract") {
-      eventTitle = `Contract - ${form.location || "Property"}`;
-      eventDetails = `Property Details:\n${form.description || "No details provided"}\n\nNotary: ${notaryName || "To be confirmed"}\nLocation: ${address || "To be confirmed"}`;
-      eventLocation = address || "";
-    }
-
-    // Build URL with properly encoded parameters
-    const baseUrl = "https://calendar.google.com/calendar/u/0/r/eventedit";
-    const params = {
-      text: eventTitle,
-      dates: `${startTime}/${endTime}`,
-      details: eventDetails,
-      location: eventLocation,
-      ctz: "UTC"
-    };
-
-    // Manually build query string to ensure proper encoding
-    const queryString = Object.entries(params)
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join("&");
-
-    return `${baseUrl}?${queryString}`;
-  };
+  // Use global buildCalendarUrl with form data as lead object
   return (
     <div className="overlay">
       <div className="modal">
@@ -1511,7 +1520,7 @@ function EditModal({ lead, onClose, onSave, onDelete }) {
               <div><label style={{ color: "#7c3aed" }}>Time</label><input type="time" value={form.viewingTime} onChange={e => set("viewingTime", e.target.value)} /></div>
               <div><label style={{ color: "#7c3aed" }}>Address</label><input value={form.viewingAddress} onChange={e => set("viewingAddress", e.target.value)} placeholder="e.g. 123 Main St" /></div>
             </div>
-            {form.viewingDate && <a href={getCalendarUrl(form.viewingDate, form.viewingTime, "viewing", form.viewingAddress)} target="_blank" rel="noreferrer" style={{ color: "#7c3aed", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
+            {form.viewingDate && <a href={buildCalendarUrl(form, "viewing")} target="_blank" rel="noreferrer" style={{ color: "#7c3aed", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
           </div>
         )}
 
@@ -1537,7 +1546,7 @@ function EditModal({ lead, onClose, onSave, onDelete }) {
               <div><label style={{ color: "#d97706" }}>Notary Name</label><input value={form.posNotaryName} onChange={e => set("posNotaryName", e.target.value)} placeholder="e.g. John Borg" /></div>
               <div><label style={{ color: "#d97706" }}>Notary Address</label><input value={form.posNotaryAddress} onChange={e => set("posNotaryAddress", e.target.value)} placeholder="e.g. Main St, Valletta" /></div>
             </div>
-            {form.posDate && <a href={getCalendarUrl(form.posDate, form.posTime, "pos", form.posAddress, form.posNotaryName)} target="_blank" rel="noreferrer" style={{ color: "#d97706", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
+            {form.posDate && <a href={buildCalendarUrl(form, "pos")} target="_blank" rel="noreferrer" style={{ color: "#d97706", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
           </div>
         )}
 
@@ -1553,7 +1562,7 @@ function EditModal({ lead, onClose, onSave, onDelete }) {
               <div><label style={{ color: "#dc2626" }}>Notary Name</label><input value={form.contractNotaryName} onChange={e => set("contractNotaryName", e.target.value)} placeholder="e.g. John Borg" /></div>
               <div><label style={{ color: "#dc2626" }}>Notary Address</label><input value={form.contractNotaryAddress} onChange={e => set("contractNotaryAddress", e.target.value)} placeholder="e.g. Main St, Valletta" /></div>
             </div>
-            {form.contractDate && <a href={getCalendarUrl(form.contractDate, form.contractTime, "contract", form.contractAddress, form.contractNotaryName)} target="_blank" rel="noreferrer" style={{ color: "#dc2626", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
+            {form.contractDate && <a href={buildCalendarUrl(form, "contract")} target="_blank" rel="noreferrer" style={{ color: "#dc2626", textDecoration: "underline", fontSize: "13px" }}>📅 Add to Google Calendar</a>}
           </div>
         )}
 
@@ -1638,10 +1647,10 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
             </p>
           )}
           {/* Row 5: Active stage indicator */}
-          {(lead.viewingDate || lead.appointmentDate) && <p className="lead-card-detail" style={{ color: "#7c3aed" }}>{'\uD83D\uDC40'} Viewing: {lead.viewingDate || lead.appointmentDate}</p>}
+          {(lead.viewingDate || lead.appointmentDate) && <p className="lead-card-detail" style={{ color: "#7c3aed" }}>{'\uD83D\uDC40'} Viewing: {lead.viewingDate || lead.appointmentDate} <a href={buildCalendarUrl(lead, "viewing")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
           {lead.offerAmount && <p className="lead-card-detail" style={{ color: "#059669", fontWeight: 700 }}>{'\uD83D\uDCB0'} Offer: {'\u20AC'}{Number(lead.offerAmount).toLocaleString()}</p>}
-          {lead.posDate && <p className="lead-card-detail" style={{ color: "#d97706" }}>{'\uD83D\uDCDD'} POS: {lead.posDate}</p>}
-          {lead.contractDate && <p className="lead-card-detail" style={{ color: "#dc2626" }}>{'\u270D\uFE0F'} Contract: {lead.contractDate}</p>}
+          {lead.posDate && <p className="lead-card-detail" style={{ color: "#d97706" }}>{'\uD83D\uDCDD'} POS: {lead.posDate} <a href={buildCalendarUrl(lead, "pos")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
+          {lead.contractDate && <p className="lead-card-detail" style={{ color: "#dc2626" }}>{'\u270D\uFE0F'} Contract: {lead.contractDate} <a href={buildCalendarUrl(lead, "contract")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
           {/* Status dropdown */}
           <div style={{ marginTop: 8 }}>
             <select className="status-select" value={lead.status}
