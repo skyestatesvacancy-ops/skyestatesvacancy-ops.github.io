@@ -1268,8 +1268,8 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
         ) : null
       ) : null,
 
-      // Dead (left) + Potential (right) shortcut buttons
-      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 14 } },
+      // Status shortcuts: Dead + Potential + Move to dropdown
+      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" } },
         lead.status !== "dead" && React.createElement("button", {
           onClick: () => {
             onStatusChange(lead.id, "dead");
@@ -1293,6 +1293,16 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
           },
           style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#7c3aed", cursor: "pointer", fontFamily: "inherit" }
         }, "\u2B50 Potential"),
+        React.createElement("select", {
+          value: lead.status,
+          onChange: (e) => { onStatusChange(lead.id, e.target.value); },
+          style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontFamily: "inherit" }
+        },
+          React.createElement("option", { value: "", disabled: true }, "Move to..."),
+          STATUSES.filter(function(st) { return st.key !== "selling"; }).map(function(st) {
+            return React.createElement("option", { key: st.key, value: st.key }, st.label);
+          })
+        ),
       ),
 
       // Details
