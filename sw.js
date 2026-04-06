@@ -1,4 +1,4 @@
-const CACHE = "propertyoro-v23";
+const CACHE = "propertyoro-v24";
 const ASSETS = ["/", "/index.html", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", e => {

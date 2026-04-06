@@ -810,6 +810,7 @@ function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChang
 
       <div className="sidebar-section">Tools</div>
       <div className={`nav-item ${page === "market" ? "active" : ""}`} onClick={() => onPageChange("market")}><span className="nav-icon">📊</span> Market Pricing</div>
+      <div className={`nav-item ${page === "learning" ? "active" : ""}`} onClick={() => onPageChange("learning")}><span className="nav-icon">🧠</span> Learning</div>
       <div className="nav-item" onClick={onToggleDark}><span className="nav-icon">{dark ? "☀️" : "🌙"}</span> {dark ? "Light Mode" : "Dark Mode"}</div>
 
       <div className="sidebar-bottom">
@@ -1673,6 +1674,171 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  LEARNING TAB — user-controlled model rules
+// ══════════════════════════════════════════════════════════════════════════════
+
+function LearningTab({ onClose }) {
+  const [rules, setRules] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [tab, setTab] = React.useState("word");
+  const [search, setSearch] = React.useState("");
+
+  const fetchRules = () => {
+    fetch(`${SUPABASE_URL}/rest/v1/model_rules?select=*&order=rejected_count.desc`, { headers: HEADERS })
+      .then(r => r.json())
+      .then(data => { setRules(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  React.useEffect(() => { fetchRules(); }, []);
+
+  const updateAction = (id, newAction) => {
+    // Check if protected locality being set to always_block
+    const rule = rules.find(r => r.id === id);
+    if (rule && rule.protected && newAction === "always_block") return;
+
+    fetch(`${SUPABASE_URL}/rest/v1/model_rules?id=eq.${id}`, {
+      method: "PATCH",
+      headers: HEADERS,
+      body: JSON.stringify({ user_action: newAction, updated_at: new Date().toISOString() }),
+    }).then(() => {
+      setRules(prev => prev.map(r => r.id === id ? { ...r, user_action: newAction } : r));
+    });
+  };
+
+  const tabs = [
+    { key: "word", label: "Words", icon: "Aa" },
+    { key: "seller", label: "Sellers", icon: "\ud83d\udc64" },
+    { key: "location", label: "Locations", icon: "\ud83d\udccd" },
+    { key: "feature", label: "Features", icon: "\u2728" },
+  ];
+
+  const filtered = rules
+    .filter(r => r.rule_type === tab)
+    .filter(r => !search || r.value.toLowerCase().includes(search.toLowerCase()));
+
+  const totalBlocked = rules.filter(r => r.user_action === "always_block").length;
+  const totalProtected = rules.filter(r => r.protected).length;
+
+  const actionColors = { auto: "#6b7280", always_block: "#ef4444", never_block: "#22c55e" };
+  const actionLabels = { auto: "Auto", always_block: "Block", never_block: "Allow" };
+  const nextAction = { auto: "always_block", always_block: "never_block", never_block: "auto" };
+
+  if (loading) return React.createElement("div", { className: "main", style: { textAlign: "center", paddingTop: 80, color: "#94a3b8" } }, "Loading learning data...");
+
+  return (
+    <div className="main" style={{ padding: "2rem", maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px" }}>
+            {"\ud83e\udde0"} Learning Engine
+          </h2>
+          <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 4 }}>
+            {rules.length} patterns learned &bull; {totalBlocked} blocked by you &bull; {totalProtected} protected
+          </p>
+        </div>
+      </div>
+
+      {/* Sub-tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => { setTab(t.key); setSearch(""); }}
+            style={{
+              padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
+              background: tab === t.key ? "#1a1a2e" : "#e5e7eb",
+              color: tab === t.key ? "#fff" : "#555",
+              transition: "all 0.2s",
+            }}>
+            {t.icon} {t.label}
+            <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 11 }}>
+              ({rules.filter(r => r.rule_type === t.key).length})
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <input
+        placeholder={`Search ${tab}s...`}
+        value={search} onChange={e => setSearch(e.target.value)}
+        style={{
+          width: "100%", padding: "10px 16px", borderRadius: 10, border: "1px solid #e5e7eb",
+          fontSize: 14, marginBottom: 16, fontFamily: "Inter, sans-serif",
+          outline: "none",
+        }}
+      />
+
+      {/* Table */}
+      <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.08)" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid #eee", background: "#fafafa" }}>
+              <th style={{ padding: "10px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: 0.5 }}>Pattern</th>
+              <th style={{ padding: "10px 16px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", width: 80 }}>Approved</th>
+              <th style={{ padding: "10px 16px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", width: 80 }}>Rejected</th>
+              <th style={{ padding: "10px 16px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", width: 80 }}>Ratio</th>
+              <th style={{ padding: "10px 16px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", width: 120 }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
+              <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#aaa" }}>
+                {search ? "No matches" : "No patterns learned yet for this category"}
+              </td></tr>
+            )}
+            {filtered.map((r, i) => {
+              const total = r.approved_count + r.rejected_count;
+              const ratio = total > 0 ? Math.round((r.rejected_count / total) * 100) : 0;
+              const ratioColor = ratio >= 80 ? "#ef4444" : ratio >= 50 ? "#f59e0b" : "#22c55e";
+              return (
+                <tr key={r.id} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#f9f9f9" }}>
+                  <td style={{ padding: "10px 16px", fontSize: 14, fontWeight: 500 }}>
+                    {r.value}
+                    {r.protected && <span title="Protected locality - cannot be blocked" style={{ marginLeft: 6, fontSize: 12 }}>{"\ud83d\udd12"}</span>}
+                  </td>
+                  <td style={{ padding: "10px 16px", textAlign: "center", color: "#22c55e", fontWeight: 600, fontSize: 14 }}>{r.approved_count}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "center", color: "#ef4444", fontWeight: 600, fontSize: 14 }}>{r.rejected_count}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                    <span style={{ background: ratioColor + "18", color: ratioColor, padding: "2px 10px", borderRadius: 10, fontSize: 12, fontWeight: 600 }}>
+                      {ratio}% rej
+                    </span>
+                  </td>
+                  <td style={{ padding: "10px 16px", textAlign: "center" }}>
+                    <button
+                      onClick={() => updateAction(r.id, nextAction[r.user_action] || "auto")}
+                      disabled={r.protected && nextAction[r.user_action] === "always_block"}
+                      style={{
+                        padding: "4px 14px", borderRadius: 8, border: "none", cursor: r.protected && nextAction[r.user_action] === "always_block" ? "not-allowed" : "pointer",
+                        fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                        background: actionColors[r.user_action] + "18",
+                        color: actionColors[r.user_action],
+                        opacity: r.protected && r.user_action === "auto" ? 0.5 : 1,
+                        transition: "all 0.2s",
+                      }}>
+                      {actionLabels[r.user_action] || "Auto"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ marginTop: 16, padding: 16, background: "#f8fafc", borderRadius: 10, fontSize: 12, color: "#94a3b8" }}>
+        <strong>How it works:</strong> Click the action button to cycle: Auto {"\u2192"} Block {"\u2192"} Allow {"\u2192"} Auto.
+        <strong> Block</strong> = scanner will skip listings matching this pattern.
+        <strong> Allow</strong> = never block, even if score is negative.
+        <strong> Auto</strong> = model scores but never blocks (default).
+        {"\ud83d\udd12"} = protected locality (cannot be blocked).
+      </div>
+    </div>
+  );
+}
+
+
 function App() {
   const [leads, setLeads]           = useState([]);
   const [editModal, setEditModal]   = useState(null);
@@ -1682,7 +1848,7 @@ function App() {
   const [filter, setFilter]         = useState("all");
   const [search, setSearch]         = useState("");
   const [error, setError]           = useState(false);
-  const [page, setPage]             = useState("leads"); // "leads" or "market"
+  const [page, setPage]             = useState("leads"); // "leads", "market", or "learning"
   const [dark, setDark]             = useState(() => localStorage.getItem("darkMode") === "true");
   const [mobileView, setMobileView] = useState("home"); // "home" or status key
   const [selectedIds, setSelectedIds] = useState([]);
@@ -2002,7 +2168,9 @@ function App() {
     <div className="app-layout">
       <Sidebar counts={counts} totalLeads={leads.length} filter={filter} onFilterChange={f => { setPage("leads"); setFilter(f); }} page={page} onPageChange={setPage} dark={dark} onToggleDark={() => setDark(d => !d)} />
 
-      {page === "market"
+      {page === "learning"
+        ? React.createElement(LearningTab, { onClose: () => setPage("leads") })
+        : page === "market"
         ? React.createElement(MarketPricing, { onClose: () => setPage("leads") })
         : isMobile
           ? (mobileView === "market"
