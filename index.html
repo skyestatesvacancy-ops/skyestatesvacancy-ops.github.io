@@ -279,7 +279,7 @@
   /* Mobile */
   @media (max-width: 900px) {
     .sidebar { display: none; }
-    .main { margin-left: 0; padding: 1rem 0.75rem; }
+    .main { margin-left: 0; padding: 1rem 0.75rem; max-width: 100vw; overflow-x: hidden; }
     .page-header { margin-bottom: 1rem; }
     .page-title { font-size: 22px; }
     .page-subtitle { font-size: 12px; }
@@ -294,15 +294,15 @@
     .search-bar select { min-width: unset; display: none; }
 
     /* Lead cards — tighter */
-    .lead-list { gap: 8px; }
-    .lead-card { padding: 0.85rem 1rem; border-radius: 12px; }
+    .lead-list { gap: 8px; max-width: 100%; overflow: hidden; }
+    .lead-card { padding: 0.85rem 1rem; border-radius: 12px; max-width: 100%; overflow: hidden; word-break: break-word; }
     .lead-card-accent { width: 3px; }
-    .lead-card-top { flex-direction: column; gap: 8px; }
-    .lead-card-body { padding-left: 6px; overflow: hidden; }
+    .lead-card-top { flex-direction: column; gap: 8px; max-width: 100%; overflow: hidden; }
+    .lead-card-body { padding-left: 6px; overflow: hidden; max-width: 100%; word-break: break-word; }
     .lead-card-price { font-size: 16px; }
     .lead-card-location { font-size: 12px; }
     .lead-card-desc { font-size: 12px; margin-top: 4px; line-height: 1.5;
-      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
     .lead-card-link { font-size: 11px; }
     .lead-card-meta { font-size: 12px; }
     .lead-card-detail { font-size: 12px; }
@@ -1655,7 +1655,7 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
           {lead.contractDate && <p className="lead-card-detail" style={{ color: "#dc2626" }}>{'\u270D\uFE0F'} Contract: {lead.contractDate}{lead.contractTime ? ' ' + lead.contractTime : ''} <a href={buildCalendarUrl(lead, "contract")} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ textDecoration: "none" }}>{'\uD83D\uDCC5'}</a></p>}
           {lead.link && (
             <a href={lead.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-              style={{ display: "block", fontSize: 12, color: "#6366f1", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 6 }}>
+              style={{ display: "block", fontSize: 12, color: "#6366f1", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%", marginTop: 6 }}>
               {lead.link}
             </a>
           )}
