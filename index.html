@@ -67,6 +67,12 @@
     margin-top: auto; padding: 1rem; border-radius: 12px;
     background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
   }
+  .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e1; border-radius: 22px; transition: 0.3s; }
+  .toggle-slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+  .toggle-switch input:checked + .toggle-slider { background: #10b981; }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
   .sidebar-bottom-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
@@ -478,6 +484,22 @@ const EMPTY_FORM = {
   posDate: "", posTime: "",
 };
 
+async function dbGetSetting(key) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/settings?key=eq.${key}&select=value`, { headers: HEADERS });
+    const data = await r.json();
+    return data.length ? data[0].value : null;
+  } catch(e) { return null; }
+}
+async function dbSetSetting(key, value) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/settings?key=eq.${key}`, {
+      method: "PATCH",
+      headers: { ...HEADERS, "Prefer": "return=minimal" },
+      body: JSON.stringify({ value, updated_at: new Date().toISOString() })
+    });
+  } catch(e) {}
+}
 async function dbGetLeads() {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/leads?order=id.desc`, { headers: HEADERS });
   return r.json();
@@ -788,7 +810,7 @@ function MarketPricing({ onClose }) {
   );
 }
 
-function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChange, dark, onToggleDark }) {
+function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChange, dark, onToggleDark, fbMessaging, onToggleFbMessaging }) {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
@@ -814,6 +836,15 @@ function Sidebar({ counts, totalLeads, filter, onFilterChange, page, onPageChang
       <div className={`nav-item ${page === "learning" ? "active" : ""}`} onClick={() => onPageChange("learning")}><span className="nav-icon">🧠</span> Learning</div>
       <div className="nav-item" onClick={onToggleDark}><span className="nav-icon">{dark ? "☀️" : "🌙"}</span> {dark ? "Light Mode" : "Dark Mode"}</div>
 
+      <div style={{ padding: "8px 16px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: fbMessaging ? "#10b981" : "#ef4444" }}>
+          {fbMessaging ? "📨 FB Messaging ON" : "🚫 FB Messaging OFF"}
+        </span>
+        <label className="toggle-switch">
+          <input type="checkbox" checked={fbMessaging} onChange={onToggleFbMessaging} />
+          <span className="toggle-slider"></span>
+        </label>
+      </div>
       <div className="sidebar-bottom">
         <div style={{ fontSize: 13, fontWeight: 600 }}>
           <span className="sidebar-bottom-dot"></span> System Online
@@ -1857,6 +1888,10 @@ function App() {
   const [error, setError]           = useState(false);
   const [page, setPage]             = useState("leads"); // "leads", "market", or "learning"
   const [dark, setDark]             = useState(() => localStorage.getItem("darkMode") === "true");
+  const [fbMessaging, setFbMessaging] = useState(true);
+  useEffect(() => {
+    dbGetSetting("facebook_messaging").then(v => { if (v && v.enabled !== undefined) setFbMessaging(v.enabled); });
+  }, []);
   const [mobileView, setMobileView] = useState("home"); // "home" or status key
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectMode, setSelectMode] = useState(false);
@@ -2173,7 +2208,7 @@ function App() {
 
   return (
     <div className="app-layout">
-      <Sidebar counts={counts} totalLeads={leads.length} filter={filter} onFilterChange={f => { setPage("leads"); setFilter(f); }} page={page} onPageChange={setPage} dark={dark} onToggleDark={() => setDark(d => !d)} />
+      <Sidebar counts={counts} totalLeads={leads.length} filter={filter} onFilterChange={f => { setPage("leads"); setFilter(f); }} page={page} onPageChange={setPage} dark={dark} onToggleDark={() => setDark(d => !d)} fbMessaging={fbMessaging} onToggleFbMessaging={async () => { const next = !fbMessaging; setFbMessaging(next); await dbSetSetting("facebook_messaging", { enabled: next }); }} />
 
       {page === "learning"
         ? React.createElement(LearningTab, { onClose: () => setPage("leads") })
