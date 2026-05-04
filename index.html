@@ -1641,10 +1641,32 @@ async function shareLead(lead) {
   // Messenger, SMS, Email, etc.) and on modern desktop browsers shows the
   // OS share menu. Falls back to WhatsApp wa.me on older desktop browsers
   // (Firefox without flag) that don't support navigator.share.
+
+  // Tag line — same logic the card uses to render
+  // "Maisonette + Airspace + Full Roof + Freehold" etc.
+  const allText = ((lead.notes || "") + " " + (lead.description || "")).toLowerCase();
+  const typePatterns = [
+    [/terraced\s*house/, "Terraced House"], [/maisonette/, "Maisonette"], [/townhouse|town\s*house/, "Townhouse"],
+    [/penthouse/, "Penthouse"], [/apartment|flat/, "Apartment"], [/villa/, "Villa"], [/bungalow/, "Bungalow"],
+    [/farmhouse/, "Farmhouse"], [/house of character/, "House of Character"], [/duplex/, "Duplex"],
+  ];
+  let propType = "";
+  for (const [pat, label] of typePatterns) { if (pat.test(allText)) { propType = label; break; } }
+  const keyFeats = [];
+  if (/airspace/.test(allText)) keyFeats.push("Airspace");
+  if (/\buca\b/.test(allText)) keyFeats.push("UCA");
+  if (/full\s*(?:roof|ownership)/.test(allText)) keyFeats.push("Full Roof");
+  if (/garage/.test(allText)) keyFeats.push("Garage");
+  if (/freehold/.test(allText)) keyFeats.push("Freehold");
+  if (/pool/.test(allText)) keyFeats.push("Pool");
+  if (/permits?/.test(allText)) keyFeats.push("Permits");
+  const tagLine = [propType, ...keyFeats].filter(Boolean).join(" + ");
+
+  // Header: location, price, tag-line — mirrors the card's top section
   const lines = [];
-  lines.push(`🏡 *${lead.location || 'Property'}*`);
-  lines.push('');
+  lines.push(`🏡 *${cleanLocation(lead.location) || 'Property'}*`);
   if (lead.price) lines.push(`💰 €${Number(lead.price).toLocaleString()}`);
+  if (tagLine)    lines.push(`🏷️ ${tagLine}`);
   lines.push('');
   if (lead.description) {
     lines.push(lead.description.trim());
