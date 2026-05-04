@@ -1395,7 +1395,7 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
           style: { flex: 1, padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#7c3aed", cursor: "pointer", fontFamily: "inherit" }
         }, "\u2B50 Potential"),
       ),
-      React.createElement("div", { style: { marginBottom: 14, display: "flex" } },
+      React.createElement("div", { style: { marginBottom: 14, display: "flex", alignItems: "center", gap: 8 } },
         React.createElement("select", {
           value: lead.status,
           onChange: (e) => { onStatusChange(lead.id, e.target.value); },
@@ -1405,6 +1405,12 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
             return React.createElement("option", { key: st.key, value: st.key }, st.label);
           })
         ),
+        React.createElement("button", {
+          className: "whatsapp-share-btn",
+          onClick: () => shareLead(lead),
+          title: "Share property",
+          style: { padding: "5px 12px", fontSize: 11 }
+        }, "Share"),
       ),
 
       // Details
@@ -1629,11 +1635,12 @@ function EditModal({ lead, onClose, onSave, onDelete }) {
   );
 }
 
-function shareViaWhatsApp(lead) {
-  // Build a friendly WhatsApp message from a lead and open wa.me with it
-  // pre-filled so the user can pick a recipient. Skips blank fields and
-  // truncates the description to ~300 chars at a sentence boundary so the
-  // total message fits in WhatsApp's preview without "show more".
+async function shareLead(lead) {
+  // Build a friendly message and use the OS native share sheet (Web Share
+  // API) — which on mobile shows ALL installed apps (WhatsApp, Telegram,
+  // Messenger, SMS, Email, etc.) and on modern desktop browsers shows the
+  // OS share menu. Falls back to WhatsApp wa.me on older desktop browsers
+  // (Firefox without flag) that don't support navigator.share.
   const lines = [];
   lines.push(`🏡 *${lead.location || 'Property'}*`);
   lines.push('');
@@ -1650,11 +1657,24 @@ function shareViaWhatsApp(lead) {
   }
   lines.push('');
   const phone = lead.ownerPhone || lead.phone;
-  if (phone)     lines.push(`📞 ${phone}`);
-  if (lead.link) lines.push(`🔗 ${lead.link}`);
+  if (phone) lines.push(`📞 ${phone}`);
 
-  const msg = lines.join('\n');
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  const text = lines.join('\n');
+  const url  = lead.link || '';
+
+  // Native share sheet — preferred path
+  if (navigator.share) {
+    try {
+      await navigator.share({ text, url });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;  // user cancelled — stop
+      // Real error — fall through to WhatsApp fallback below
+    }
+  }
+  // Fallback: open WhatsApp directly
+  const fullMsg = url ? `${text}\n${url}` : text;
+  window.open(`https://wa.me/?text=${encodeURIComponent(fullMsg)}`, '_blank');
 }
 
 function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggleSelect }) {
@@ -1757,8 +1777,8 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
                 : STATUSES.filter(st => st.key !== "selling").map(st => <option key={st.key} value={st.key}>{st.label}</option>)
               }
             </select>
-            <button className="whatsapp-share-btn" onClick={e => { e.stopPropagation(); shareViaWhatsApp(lead); }} title="Share via WhatsApp">
-              \uD83D\uDCE4 Share
+            <button className="whatsapp-share-btn" onClick={e => { e.stopPropagation(); shareLead(lead); }} title="Share property">
+              Share
             </button>
           </div>
         </div>
