@@ -144,6 +144,13 @@
     font-size: 12px; transition: all 0.2s; font-family: inherit;
   }
   .btn-edit:hover { background: #f1f5f9; color: #334155; }
+  .whatsapp-share-btn {
+    background: #25D366; color: white; border: 1px solid #1ebe5a;
+    font-weight: 600; border-radius: 10px; padding: 6px 14px; cursor: pointer;
+    font-size: 12px; transition: all 0.2s; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .whatsapp-share-btn:hover { background: #1ebe5a; }
 
   /* Lead cards */
   .lead-list { display: flex; flex-direction: column; gap: 12px; }
@@ -317,6 +324,7 @@
     .lead-card-actions { flex-direction: row; align-items: center; gap: 8px; }
     .status-select { font-size: 11px; padding: 5px 10px; }
     .btn-edit { font-size: 11px; padding: 5px 12px; }
+    .whatsapp-share-btn { font-size: 11px; padding: 5px 12px; }
 
     /* Modal */
     .modal { padding: 1.25rem; border-radius: 16px; }
@@ -1192,13 +1200,20 @@ function PreviewModal({ lead, onClose, onEdit, leads, onNavigate, onStatusChange
     touchStart.current = null;
   };
 
-  // Lock body scroll when preview is open
+  // Lock body scroll when preview is open.
+  //
+  // Order matters here — capture scrollY BEFORE setting any body styles.
+  // Setting `position: fixed` on the body removes it from normal flow and
+  // immediately resets window.scrollY to 0. Reading window.scrollY after
+  // that point would always give 0, so the cleanup would scroll the user
+  // back to the top of the list instead of restoring their position.
+  // Fixed 2026-04-28 — was scrolling list back to top on every close.
   React.useEffect(() => {
+    const scrollY = window.scrollY;
     document.body.style.overflow = "hidden";
     document.body.style.position = "fixed";
     document.body.style.width = "100%";
-    document.body.style.top = `-${window.scrollY}px`;
-    const scrollY = window.scrollY;
+    document.body.style.top = `-${scrollY}px`;
     return () => {
       document.body.style.overflow = "";
       document.body.style.position = "";
@@ -1614,6 +1629,34 @@ function EditModal({ lead, onClose, onSave, onDelete }) {
   );
 }
 
+function shareViaWhatsApp(lead) {
+  // Build a friendly WhatsApp message from a lead and open wa.me with it
+  // pre-filled so the user can pick a recipient. Skips blank fields and
+  // truncates the description to ~300 chars at a sentence boundary so the
+  // total message fits in WhatsApp's preview without "show more".
+  const lines = [];
+  lines.push(`🏡 *${lead.location || 'Property'}*`);
+  lines.push('');
+  if (lead.price) lines.push(`💰 €${Number(lead.price).toLocaleString()}`);
+  lines.push('');
+  if (lead.description) {
+    let desc = lead.description.trim();
+    if (desc.length > 300) {
+      const cut = desc.slice(0, 300);
+      const lastPeriod = cut.lastIndexOf('.');
+      desc = lastPeriod > 180 ? cut.slice(0, lastPeriod + 1) : cut + '…';
+    }
+    lines.push(desc);
+  }
+  lines.push('');
+  const phone = lead.ownerPhone || lead.phone;
+  if (phone)     lines.push(`📞 ${phone}`);
+  if (lead.link) lines.push(`🔗 ${lead.link}`);
+
+  const msg = lines.join('\n');
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
 function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggleSelect }) {
   const s = STATUS_MAP[lead.status] || STATUS_MAP.waiting;
   // Extract feature chips from notes (e.g. "Bedrooms: 3 | Features: airspace, UCA")
@@ -1648,7 +1691,16 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
   const tagLine = [propType, ...keyFeats].filter(Boolean).join(" + ");
 
   return (
-    <div className="lead-card" onClick={() => selectable ? onToggleSelect(lead.id) : onEdit(lead)} style={{ cursor: "pointer", outline: selected ? "2px solid #e53e3e" : "none", outlineOffset: "2px", borderColor: s.color, borderWidth: 2 }}>
+    <div className="lead-card" onClick={(e) => {
+      // Ignore clicks that originated from any interactive child. Each child
+      // also has its own stopPropagation, but native <select> widgets on
+      // some browsers bypass synthetic-event bubbling — clicking the status
+      // dropdown was opening the Edit modal even with stopPropagation set.
+      // Walking e.target.closest() catches the bubble at the destination
+      // instead of relying on every source to halt it. Added 2026-04-28.
+      if (e.target.closest('select, button, a, input, label, option')) return;
+      if (selectable) onToggleSelect(lead.id); else onEdit(lead);
+    }} style={{ cursor: "pointer", outline: selected ? "2px solid #e53e3e" : "none", outlineOffset: "2px", borderColor: s.color, borderWidth: 2 }}>
       <div className="lead-card-accent" style={{ background: s.gradient }}></div>
       {selectable && (
         <input type="checkbox" checked={!!selected} onChange={e => { e.stopPropagation(); onToggleSelect(lead.id); }}
@@ -1690,8 +1742,8 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
               {lead.link}
             </a>
           )}
-          {/* Status dropdown */}
-          <div style={{ marginTop: 8 }}>
+          {/* Status dropdown + Share button */}
+          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
             <select className="status-select" value={lead.status}
               onChange={e => { e.stopPropagation(); onStatusChange(lead.id, e.target.value); }}
               onClick={e => e.stopPropagation()}
@@ -1705,6 +1757,9 @@ function LeadCard({ lead, onEdit, onStatusChange, selectable, selected, onToggle
                 : STATUSES.filter(st => st.key !== "selling").map(st => <option key={st.key} value={st.key}>{st.label}</option>)
               }
             </select>
+            <button className="whatsapp-share-btn" onClick={e => { e.stopPropagation(); shareViaWhatsApp(lead); }} title="Share via WhatsApp">
+              \uD83D\uDCE4 Share
+            </button>
           </div>
         </div>
       </div>
