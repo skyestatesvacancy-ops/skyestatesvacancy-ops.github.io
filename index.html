@@ -1647,13 +1647,7 @@ async function shareLead(lead) {
   if (lead.price) lines.push(`💰 €${Number(lead.price).toLocaleString()}`);
   lines.push('');
   if (lead.description) {
-    let desc = lead.description.trim();
-    if (desc.length > 300) {
-      const cut = desc.slice(0, 300);
-      const lastPeriod = cut.lastIndexOf('.');
-      desc = lastPeriod > 180 ? cut.slice(0, lastPeriod + 1) : cut + '…';
-    }
-    lines.push(desc);
+    lines.push(lead.description.trim());
   }
   lines.push('');
   const phone = lead.ownerPhone || lead.phone;
